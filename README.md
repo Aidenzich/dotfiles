@@ -12,11 +12,24 @@ make init
 ## What `make init` does
 
 1. **Detect OS** via `install/lib/detect-os.sh` → routes to one of:
-   - `install/mac.sh` — ensures Homebrew, runs `brew bundle pkgs/Brewfile`
-   - `install/linux.sh` — picks the right pm (apt/dnf/pacman/zypper/apk), installs `pkgs/linux.txt`, installs uv via the official script
-   - `install/windows.ps1` — winget from `pkgs/winget.txt` + uv via the official PowerShell script (must be invoked via `pwsh`, not GNU make)
+   - `install/mac.sh` — ensures Homebrew, runs `brew bundle pkgs/Brewfile` (which includes `node` + the `claude-code` and `codex` CLI casks).
+   - `install/linux.sh` — picks the right pm (apt/dnf/pacman/zypper/apk), installs `pkgs/linux.txt` (incl. `nodejs npm`), installs `uv` via the official script, then `npm i -g` every entry in `pkgs/npm-global.txt`.
+   - `install/windows.ps1` — winget from `pkgs/winget.txt` (incl. `OpenJS.NodeJS.LTS`), `uv` via the official PowerShell script, then `npm i -g` every entry in `pkgs/npm-global.txt`. Must be invoked via `pwsh`, not GNU make.
 2. **Symlinks** every entry in `install/symlinks.txt` into `$HOME`, backing up any existing file to `<dst>.bak.<timestamp>`.
 3. **Greets** via `install/lib/greet.sh` — geeky welcome using `git config --global user.name`. Uses `figlet`+`lolcat` for ASCII art if installed, else falls back to an ANSI block.
+
+### What ends up installed
+
+Cross-platform baseline (every OS path): `git`, `jq`, `tmux`, `gh`, `ripgrep`, `fd`, `fzf`, `figlet`, `lolcat`, `uv`, `node` + `npm`, `claude` (Anthropic Claude Code CLI), `codex` (OpenAI Codex CLI).
+
+AI CLI delivery is split per OS to use the most native packaging:
+
+| Tool | mac | linux / WSL | windows |
+|---|---|---|---|
+| `claude` | `cask "claude-code"` — Mach-O binary | `npm i -g @anthropic-ai/claude-code` | `npm i -g @anthropic-ai/claude-code` |
+| `codex`  | `cask "codex"` — Rust binary         | `npm i -g @openai/codex`              | `npm i -g @openai/codex`              |
+
+Both casks are CLI binaries (not GUI `.app`s — Homebrew's `cask` keyword is misleading there; see notes in `pkgs/Brewfile`). On mac, update both with `brew upgrade --cask`.
 
 | Make target | What it does |
 |---|---|
@@ -45,9 +58,10 @@ dotfiles/
 │       ├── symlink.sh             # idempotent symlink + backup helpers
 │       └── greet.sh               # geeky welcome (figlet/lolcat or ANSI)
 ├── pkgs/
-│   ├── Brewfile                   # mac packages
+│   ├── Brewfile                   # mac packages (incl. claude-code + codex casks)
 │   ├── linux.txt                  # debian/ubuntu names (other distros: edit)
-│   └── winget.txt                 # winget package IDs
+│   ├── winget.txt                 # winget package IDs
+│   └── npm-global.txt             # `npm i -g <line>` for linux + windows (mac skips — brew handles)
 ├── claude/                        # auto-memory hardening — see claude/README.md
 ├── .tmux.conf                     # symlinked to ~/.tmux.conf
 └── README.md
@@ -69,6 +83,7 @@ dotfiles/
 | add a brew package | append `brew "name"` to `pkgs/Brewfile` |
 | add a linux package | append a line to `pkgs/linux.txt` |
 | add a winget package | append the ID (e.g. `Author.Name`) to `pkgs/winget.txt` |
+| add an npm global (linux/win) | append the package spec (e.g. `@scope/name`) to `pkgs/npm-global.txt`. On mac add the equivalent `brew "..."` / `cask "..."` to `Brewfile` instead — brew updates are nicer than `npm i -g` on macOS. |
 | symlink a new dotfile | put the file in repo root (or any subdir), add `<repo-path>:<home-path>` to `install/symlinks.txt` |
 | change the welcome | edit `install/lib/greet.sh` |
 | add a new OS path | drop `install/<os>.sh`, extend `detect-os.sh` + Makefile `init` switch |
