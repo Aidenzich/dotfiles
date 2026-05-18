@@ -63,7 +63,7 @@ doctor:
 	@echo "dotfiles    : $(DOTFILES_ROOT)"
 	@echo "git user    : $$(git config --global user.name 2>/dev/null || echo '(unset)')"
 	@echo "tools:"
-	@for cmd in git jq tmux brew apt-get dnf pacman winget figlet lolcat uv gh fzf rg fd node npm codex; do \
+	@for cmd in git jq tmux brew apt-get dnf pacman winget figlet lolcat uv gh fzf rg fd node npm codex claude; do \
 	  if command -v $$cmd >/dev/null 2>&1; then \
 	    printf '  \033[32m✓\033[0m %s  (%s)\n' "$$cmd" "$$(command -v $$cmd)"; \
 	  else \

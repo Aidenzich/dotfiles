@@ -8,3 +8,4 @@
 # `npm i -g <line>` is run for each.
 
 @openai/codex
+@anthropic-ai/claude-code
