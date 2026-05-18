@@ -37,6 +37,21 @@ if (-not (Get-Command uv -ErrorAction SilentlyContinue)) {
   powershell -ExecutionPolicy ByPass -Command "irm https://astral.sh/uv/install.ps1 | iex"
 }
 
+# ---------- npm globals (e.g. @openai/codex) ----------
+$npmGlobalsFile = Join-Path $DotfilesRoot "pkgs\npm-global.txt"
+if (Test-Path $npmGlobalsFile) {
+  if (Get-Command npm -ErrorAction SilentlyContinue) {
+    $globals = Get-Content $npmGlobalsFile | Where-Object { $_ -notmatch '^\s*(#|$)' }
+    foreach ($pkg in $globals) {
+      Write-Host "[win] npm i -g $pkg"
+      npm i -g $pkg
+    }
+  } else {
+    Write-Host "[win] WARN: npm not on PATH — skipped pkgs/npm-global.txt"
+    Write-Host "       open a new shell so the Node.js installer's PATH changes take effect, then re-run."
+  }
+}
+
 # ---------- symlinks ----------
 Write-Host "[win] creating symlinks (requires Developer Mode or admin)"
 $symlinksFile = Join-Path $DotfilesRoot "install\symlinks.txt"

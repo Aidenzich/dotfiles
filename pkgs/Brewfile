@@ -16,3 +16,12 @@ brew "lolcat"
 # Python toolchain — uv replaces pyenv + pip + poetry combo.
 # `uv python install <ver>` provisions any Python on demand.
 brew "uv"
+
+# Node + npm (brew "node" includes npm). Non-mac paths install node via the
+# system pm + then `npm i -g` from pkgs/npm-global.txt; mac skips that step
+# because brew handles codex natively (cask below).
+brew "node"
+
+# OpenAI Codex CLI. On mac use the brew cask (auto-updates with `brew upgrade`).
+# Non-mac paths install via `npm i -g @openai/codex` (see pkgs/npm-global.txt).
+cask "codex"

@@ -49,4 +49,20 @@ if ! command -v uv >/dev/null 2>&1; then
   curl -LsSf https://astral.sh/uv/install.sh | sh
 fi
 
+# Install npm globals (e.g. @openai/codex). Skipped silently if npm is absent
+# — happens if the user's distro ships a different nodejs package set.
+NPM_GLOBALS_FILE="$DOTFILES_ROOT/pkgs/npm-global.txt"
+if [ -f "$NPM_GLOBALS_FILE" ]; then
+  if command -v npm >/dev/null 2>&1; then
+    while IFS= read -r line || [ -n "$line" ]; do
+      case "$line" in ''|\#*) continue ;; esac
+      echo "[linux] npm i -g $line"
+      $SUDO npm i -g "$line"
+    done < "$NPM_GLOBALS_FILE"
+  else
+    echo "[linux] WARN: npm not on PATH — skipped pkgs/npm-global.txt"
+    echo "        install npm manually, then run: $(grep -v '^[#[:space:]]*$' "$NPM_GLOBALS_FILE" | sed 's/^/  npm i -g /')"
+  fi
+fi
+
 bash "$DOTFILES_ROOT/install/common.sh"

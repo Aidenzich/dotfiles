@@ -1,0 +1,10 @@
+# Global npm packages installed by install/linux.sh and install/windows.ps1
+# AFTER node + npm are available.
+#
+# macOS does NOT process this file: pkgs/Brewfile installs the official
+# `codex` cask directly (auto-updates with `brew upgrade`).
+#
+# Format: one package spec per line. Comments + blank lines skipped.
+# `npm i -g <line>` is run for each.
+
+@openai/codex

@@ -11,3 +11,6 @@ GitHub.cli
 BurntSushi.ripgrep.MSVC
 sharkdp.fd
 junegunn.fzf
+
+# Node LTS — provides npm for installing pkgs/npm-global.txt entries.
+OpenJS.NodeJS.LTS
