@@ -1,0 +1,18 @@
+# Homebrew package set for macOS.
+# Used by install/mac.sh via `brew bundle`.
+
+# Core CLI
+brew "jq"
+brew "tmux"
+brew "gh"
+brew "ripgrep"
+brew "fd"
+brew "fzf"
+
+# Greeting eye-candy (greet.sh detects + uses these if present)
+brew "figlet"
+brew "lolcat"
+
+# Python toolchain — uv replaces pyenv + pip + poetry combo.
+# `uv python install <ver>` provisions any Python on demand.
+brew "uv"

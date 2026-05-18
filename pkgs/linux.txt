@@ -1,0 +1,16 @@
+# Linux / WSL package list. Names that work on Debian/Ubuntu via apt.
+# Other distros: install/linux.sh maps to dnf/pacman/zypper/apk using the same
+# names — adjust if your distro spells a package differently.
+#
+# uv is installed via the official script (curl | sh) in install/linux.sh
+# because the apt/dnf-packaged versions lag.
+
+jq
+tmux
+gh
+ripgrep
+fd-find
+fzf
+figlet
+# lolcat ships via rubygems on most distros; install manually with:
+#   sudo gem install lolcat

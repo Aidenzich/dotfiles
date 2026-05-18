@@ -1,0 +1,13 @@
+# winget package IDs for native Windows.
+# Used by install/windows.ps1.
+#
+# tmux / figlet / lolcat aren't useful in native Windows shells; install them
+# from inside WSL via pkgs/linux.txt if you want them there.
+# uv is installed via the official PowerShell script in install/windows.ps1
+# because the winget-packaged version lags.
+
+jqlang.jq
+GitHub.cli
+BurntSushi.ripgrep.MSVC
+sharkdp.fd
+junegunn.fzf

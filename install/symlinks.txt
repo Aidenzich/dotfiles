@@ -1,0 +1,5 @@
+# Files to symlink from dotfiles repo into $HOME.
+# Format: <src_path_relative_to_dotfiles>:<dst_path_relative_to_HOME>
+# Lines starting with '#' or blank are skipped.
+
+.tmux.conf:.tmux.conf
