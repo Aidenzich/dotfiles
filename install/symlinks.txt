@@ -3,3 +3,4 @@
 # Lines starting with '#' or blank are skipped.
 
 .tmux.conf:.tmux.conf
+.zshrc:.zshrc
