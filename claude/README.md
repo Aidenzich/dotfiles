@@ -1,0 +1,80 @@
+# Claude Code dotfiles — auto-memory hardening
+
+Tools for redirecting Claude Code's built-in auto-memory writes to the
+project-level `.agent-lessons/` (ALR) knowledge base.
+
+## Why
+
+Claude Code's default system prompt contains a long `# auto memory` section
+that strongly biases the model toward writing experiences / feedback / rules
+into `~/.claude/projects/<slug>/memory/`. That directory is per-user,
+per-machine, opaque to the team, and not git-tracked.
+
+Most isuper-style monorepos want the opposite: every lesson lives in
+`<repo>/.agent-lessons/` so it's git-tracked, reviewable, and shared across
+agents / sessions / engineers. Project-level CLAUDE.md instructions to
+"ignore auto-memory" sit near the bottom of the prompt and are routinely
+overridden in practice by the longer default section.
+
+These scripts make the rule enforceable instead of advisory.
+
+## Components
+
+| Path | Role |
+|---|---|
+| `hooks/block-auto-memory.sh` | PreToolUse hook. Rejects Write/Edit/MultiEdit/NotebookEdit when `file_path` lives under `~/.claude/projects/<slug>/memory/`. Returns a `decision:block` JSON with a redirect message so the LLM retries against `.agent-lessons/`. |
+| `scripts/install-block-auto-memory.sh [project_dir]` | Idempotently merges the hook into `<project>/.claude/settings.json`. Safe to re-run. |
+| `scripts/uninstall-block-auto-memory.sh [project_dir]` | Removes the hook from `<project>/.claude/settings.json`. |
+| `scripts/list-memory.sh [project_dir]` | Prints existing auto-memory files for the project so they can be hand-migrated to `.agent-lessons/lessons/`. |
+
+## Per-project usage
+
+In any project Makefile that wants this behavior, add:
+
+```makefile
+DOTFILES_CLAUDE := $(HOME)/Projects/dotfiles/claude
+
+.PHONY: claude-disable-auto-memory claude-enable-auto-memory claude-list-memory
+
+claude-disable-auto-memory:
+	@bash $(DOTFILES_CLAUDE)/scripts/install-block-auto-memory.sh $(PWD)
+
+claude-enable-auto-memory:
+	@bash $(DOTFILES_CLAUDE)/scripts/uninstall-block-auto-memory.sh $(PWD)
+
+claude-list-memory:
+	@bash $(DOTFILES_CLAUDE)/scripts/list-memory.sh $(PWD)
+```
+
+Then run:
+
+```
+make claude-disable-auto-memory
+```
+
+The hook is registered in `<project>/.claude/settings.json` and fires on
+every Write-like tool call in that project's Claude Code sessions.
+
+## Requirements
+
+- `jq` (`brew install jq`) — used by install/uninstall scripts to merge JSON.
+- The dotfiles repo cloned at `~/Projects/dotfiles/`. The Makefile snippet
+  above assumes this path.
+
+## What gets blocked
+
+Any tool call whose `file_path` matches:
+
+```
+*/.claude/projects/*/memory
+*/.claude/projects/*/memory/*
+```
+
+Reading from those paths is NOT blocked — only writes. That way old memory
+content stays accessible while new persistence is forced to ALR.
+
+## Reversibility
+
+`make claude-enable-auto-memory` removes the hook from the project's
+`.claude/settings.json` without touching anything else. The hook script
+itself in dotfiles is untouched.
