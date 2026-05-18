@@ -23,7 +23,8 @@ These scripts make the rule enforceable instead of advisory.
 | Path | Role |
 |---|---|
 | `hooks/block-auto-memory.sh` | PreToolUse hook. Rejects Write/Edit/MultiEdit/NotebookEdit when `file_path` lives under `~/.claude/projects/<slug>/memory/`. Returns a `decision:block` JSON with a redirect message so the LLM retries against `.agent-lessons/`. |
-| `scripts/install-block-auto-memory.sh [project_dir]` | Idempotently merges the hook into `<project>/.claude/settings.json`. Safe to re-run. |
+| `settings.snippets/block-auto-memory.json` | Canonical merge fragment — the exact JSON the install script splices into `<project>/.claude/settings.json` under `.hooks.PreToolUse[]`. Contains the placeholder `__HOOK_COMMAND__` which install replaces with the absolute path to the hook script. |
+| `scripts/install-block-auto-memory.sh [project_dir]` | Idempotently merges the snippet into `<project>/.claude/settings.json` via jq. Safe to re-run. |
 | `scripts/uninstall-block-auto-memory.sh [project_dir]` | Removes the hook from `<project>/.claude/settings.json`. |
 | `scripts/list-memory.sh [project_dir]` | Prints existing auto-memory files for the project so they can be hand-migrated to `.agent-lessons/lessons/`. |
 
@@ -54,6 +55,31 @@ make claude-disable-auto-memory
 
 The hook is registered in `<project>/.claude/settings.json` and fires on
 every Write-like tool call in that project's Claude Code sessions.
+
+## Manual install (no jq, or you want to read what gets merged)
+
+If you can't or don't want to run the install script (CI without jq,
+non-standard dotfiles path, you already have a complex `settings.json` and
+prefer to splice by eye), the canonical merge fragment lives at
+`settings.snippets/block-auto-memory.json`:
+
+```json
+{
+  "matcher": "Write|Edit|MultiEdit|NotebookEdit",
+  "hooks": [
+    {
+      "type": "command",
+      "command": "__HOOK_COMMAND__"
+    }
+  ]
+}
+```
+
+Substitute `__HOOK_COMMAND__` with the absolute path to the hook script
+(`bash /absolute/path/to/dotfiles/claude/hooks/block-auto-memory.sh`) and
+append the resulting object to your project's
+`.claude/settings.json` under `.hooks.PreToolUse[]`. The install script is
+just `jq` automation on top of this exact fragment — nothing more.
 
 ## Requirements
 

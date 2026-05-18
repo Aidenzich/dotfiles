@@ -5,8 +5,11 @@
 # Usage:
 #   bash install-block-auto-memory.sh [project_dir]
 #
-# Re-running is safe: any prior entry referencing this hook is removed before
-# the fresh one is appended.
+# The hook entry is sourced from ../settings.snippets/block-auto-memory.json
+# (the canonical merge fragment) with __HOOK_COMMAND__ substituted for the
+# absolute path to this dotfiles checkout. Re-running is safe: any prior
+# entry referencing the same command is removed before the fresh one is
+# appended.
 
 set -euo pipefail
 
@@ -14,11 +17,16 @@ PROJECT="${1:-$PWD}"
 SETTINGS="$PROJECT/.claude/settings.json"
 DOTFILES_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 HOOK_SCRIPT="$DOTFILES_ROOT/claude/hooks/block-auto-memory.sh"
+SNIPPET="$DOTFILES_ROOT/claude/settings.snippets/block-auto-memory.json"
 HOOK_CMD="bash $HOOK_SCRIPT"
-MATCHER="Write|Edit|MultiEdit|NotebookEdit"
 
 if ! command -v jq >/dev/null 2>&1; then
   echo "error: jq is required (brew install jq)" >&2
+  exit 1
+fi
+
+if [ ! -f "$SNIPPET" ]; then
+  echo "error: snippet missing: $SNIPPET" >&2
   exit 1
 fi
 
@@ -30,10 +38,20 @@ fi
 mkdir -p "$(dirname "$SETTINGS")"
 [ -f "$SETTINGS" ] || printf '{}\n' > "$SETTINGS"
 
+# Resolve the snippet: substitute the __HOOK_COMMAND__ placeholder with the
+# real bash invocation. Done via jq so escaping is correct.
+resolved_entry=$(jq \
+  --arg cmd "$HOOK_CMD" \
+  '
+    .hooks |= map(
+      if .command == "__HOOK_COMMAND__" then .command = $cmd else . end
+    )
+  ' "$SNIPPET")
+
 tmp=$(mktemp)
 jq \
   --arg cmd "$HOOK_CMD" \
-  --arg matcher "$MATCHER" \
+  --argjson entry "$resolved_entry" \
   '
   .hooks //= {}
   | .hooks.PreToolUse //= []
@@ -44,12 +62,9 @@ jq \
         ((.hooks // []) | map(.command)) | index($cmd) | not
       )
     )
-  | .hooks.PreToolUse += [{
-      "matcher": $matcher,
-      "hooks": [{"type": "command", "command": $cmd}]
-    }]
+  | .hooks.PreToolUse += [$entry]
   ' "$SETTINGS" > "$tmp" && mv "$tmp" "$SETTINGS"
 
 echo "installed PreToolUse hook → $SETTINGS"
-echo "  matcher: $MATCHER"
+echo "  matcher: $(jq -r '.matcher' <<<"$resolved_entry")"
 echo "  command: $HOOK_CMD"

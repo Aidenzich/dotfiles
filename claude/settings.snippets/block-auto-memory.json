@@ -1,0 +1,9 @@
+{
+  "matcher": "Write|Edit|MultiEdit|NotebookEdit",
+  "hooks": [
+    {
+      "type": "command",
+      "command": "__HOOK_COMMAND__"
+    }
+  ]
+}
