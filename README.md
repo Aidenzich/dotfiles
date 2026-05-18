@@ -75,6 +75,11 @@ dotfiles/
 - **Native Windows**: `make` itself isn't shipped with Windows. Either:
   - install [GNU make for Windows](https://gnuwin32.sourceforge.net/packages/make.htm) / use MSYS2, then `make init` works
   - or run the PowerShell entry point directly: `pwsh -ExecutionPolicy Bypass -File install\windows.ps1`. Symlinks require Developer Mode enabled OR running as Administrator.
+- **Windows from scratch (WSL2 path — recommended)**: if you don't have WSL yet and want the full mac/linux-flavored toolbelt, use `install\windows-wsl-bootstrap.ps1`. It detects the current state and resumes from wherever you are. From an **elevated** PowerShell:
+  ```powershell
+  irm https://raw.githubusercontent.com/Aidenzich/dotfiles/main/install/windows-wsl-bootstrap.ps1 | iex
+  ```
+  Two unavoidable manual steps in between: (1) reboot after WSL feature install, (2) first-launch Ubuntu once to set your UNIX user. Re-running the script picks up from wherever you stopped. After it finishes, open WezTerm and set `config.default_prog = { 'wsl.exe', '~', '-d', 'Ubuntu' }` in `~/.wezterm.lua` so every new tab launches into the WSL bash with the full bootstrap.
 
 ## Adding things
 

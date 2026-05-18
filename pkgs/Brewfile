@@ -17,6 +17,11 @@ brew "lolcat"
 # `uv python install <ver>` provisions any Python on demand.
 brew "uv"
 
+# WezTerm — GPU-accelerated cross-platform terminal emulator (Lua config).
+# Picked over iTerm2 because the same config works on mac/linux/windows;
+# default config: ~/.wezterm.lua or ~/.config/wezterm/wezterm.lua.
+cask "wezterm"
+
 # Node + npm (brew "node" includes npm). Non-mac paths install node via the
 # system pm + then `npm i -g` from pkgs/npm-global.txt; mac skips that step
 # because brew handles codex natively (cask below).

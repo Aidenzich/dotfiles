@@ -14,3 +14,6 @@ junegunn.fzf
 
 # Node LTS — provides npm for installing pkgs/npm-global.txt entries.
 OpenJS.NodeJS.LTS
+
+# WezTerm — cross-platform GPU terminal (Lua config shared with mac/linux).
+wez.wezterm
