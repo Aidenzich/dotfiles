@@ -64,6 +64,8 @@ dotfiles/
 │   └── npm-global.txt             # `npm i -g <line>` for linux + windows (mac skips — brew handles)
 ├── claude/                        # auto-memory hardening — see claude/README.md
 ├── .tmux.conf                     # symlinked to ~/.tmux.conf
+├── .zshrc                         # guarded cross-OS zsh setup
+├── .p10k.zsh                      # Powerlevel10k prompt config
 └── README.md
 ```
 
