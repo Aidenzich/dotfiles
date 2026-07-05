@@ -12,15 +12,30 @@ make init
 ## What `make init` does
 
 1. **Detect OS** via `install/lib/detect-os.sh` → routes to one of:
-   - `install/mac.sh` — ensures Homebrew, runs `brew bundle pkgs/Brewfile` (which includes `node` + the `claude-code` and `codex` CLI casks).
-   - `install/linux.sh` — picks the right pm (apt/dnf/pacman/zypper/apk), installs `pkgs/linux.txt` (incl. `nodejs npm`), installs `uv` via the official script, then `npm i -g` every entry in `pkgs/npm-global.txt`.
-   - `install/windows.ps1` — winget from `pkgs/winget.txt` (incl. `OpenJS.NodeJS.LTS`), `uv` via the official PowerShell script, then `npm i -g` every entry in `pkgs/npm-global.txt`. Must be invoked via `pwsh`, not GNU make.
+   - `install/mac.sh` — ensures Homebrew, runs `brew bundle pkgs/Brewfile` (which includes `node` + the `claude-code` and `codex` CLI casks), then installs/upgrades Antigravity CLI via Google's installer.
+   - `install/linux.sh` — picks the right pm (apt/dnf/pacman/zypper/apk), installs `pkgs/linux.txt` (incl. `nodejs npm`), installs `uv` + Antigravity CLI via official scripts, then `npm i -g` every entry in `pkgs/npm-global.txt`.
+   - `install/windows.ps1` — winget from `pkgs/winget.txt` (incl. `OpenJS.NodeJS.LTS`), `uv` + Antigravity CLI via official PowerShell scripts, then `npm i -g` every entry in `pkgs/npm-global.txt`. Must be invoked via `pwsh`, not GNU make.
 2. **Symlinks** every entry in `install/symlinks.txt` into `$HOME`, backing up any existing file to `<dst>.bak.<timestamp>`.
-3. **Greets** via `install/lib/greet.sh` — geeky welcome using `git config --global user.name`. Uses `figlet`+`lolcat` for ASCII art if installed, else falls back to an ANSI block.
+3. **SSH remote-login check** via `install/lib/ssh-check.sh` — report-only. Detects whether inbound SSH is on (so a remote client like [Terminus](https://termius.com/) can connect) and, if it's off, prints the exact enable command for your OS. It never flips the setting itself. Also prints your reachable addresses (Tailscale IP + LAN IP) as connect hints.
+4. **Greets** via `install/lib/greet.sh` — geeky welcome using `git config --global user.name`. Uses `figlet`+`lolcat` for ASCII art if installed, else falls back to an ANSI block.
+
+### VPN & remote access
+
+`make init` now also installs, per OS:
+
+| Tool | mac | linux / WSL | windows |
+|---|---|---|---|
+| **OpenVPN** (CLI client) | `brew "openvpn"` | `openvpn` (apt/dnf/…, from `pkgs/linux.txt`) | `OpenVPNTechnologies.OpenVPNConnect` (winget) |
+| **Tailscale** (mesh VPN) | `brew "tailscale"` | official `tailscale.com/install.sh` (skipped on WSL) | `tailscale.tailscale` (winget) |
+
+Both VPNs need a deliberate privileged step to actually connect, which the bootstrap does **not** automate — it only installs + reminds you:
+
+- OpenVPN: `sudo openvpn --config your.ovpn`
+- Tailscale: `sudo tailscale up` (mac also needs `sudo tailscaled install-system-daemon` first).
 
 ### What ends up installed
 
-Cross-platform baseline (every OS path): `git`, `jq`, `tmux`, `gh`, `ripgrep`, `fd`, `fzf`, `figlet`, `lolcat`, `uv`, `node` + `npm`, `claude` (Anthropic Claude Code CLI), `codex` (OpenAI Codex CLI).
+Cross-platform baseline (every OS path): `git`, `jq`, `tmux`, `gh`, `ripgrep`, `fd`, `fzf`, `figlet`, `lolcat`, `uv`, `node` + `npm`, `claude` (Anthropic Claude Code CLI), `codex` (OpenAI Codex CLI), `agy` (Google Antigravity CLI).
 
 AI CLI delivery is split per OS to use the most native packaging:
 
@@ -28,15 +43,17 @@ AI CLI delivery is split per OS to use the most native packaging:
 |---|---|---|---|
 | `claude` | `cask "claude-code"` — Mach-O binary | `npm i -g @anthropic-ai/claude-code` | `npm i -g @anthropic-ai/claude-code` |
 | `codex`  | `cask "codex"` — Rust binary         | `npm i -g @openai/codex`              | `npm i -g @openai/codex`              |
+| `agy` | `curl -fsSL https://antigravity.google/cli/install.sh \| bash` | same shell installer | `irm https://antigravity.google/cli/install.ps1 \| iex` |
 
-Both casks are CLI binaries (not GUI `.app`s — Homebrew's `cask` keyword is misleading there; see notes in `pkgs/Brewfile`). On mac, update both with `brew upgrade --cask`.
+The `claude` and `codex` casks are CLI binaries (not GUI `.app`s — Homebrew's `cask` keyword is misleading there; see notes in `pkgs/Brewfile`). On mac, update both with `brew upgrade --cask`. Antigravity CLI is installed via Google's official installer.
 
 | Make target | What it does |
 |---|---|
 | `make init` | auto-detect OS, full path |
 | `make init-mac` / `make init-linux` / `make init-windows` | force a specific OS path |
 | `make symlinks` | re-run only the symlink step |
-| `make doctor` | print detected OS + which expected tools are installed |
+| `make doctor` | print detected OS + which expected tools are installed (now incl. `openvpn`, `tailscale`, `ssh`) |
+| `make ssh-check` | check whether inbound SSH is on (for Terminus) + print connect hints |
 | `make greet` | sanity-check the welcome script |
 | `make claude-disable-auto-memory [TARGET=…]` | install Claude's auto-memory block hook into a project. See `claude/README.md`. |
 | `make claude-enable-auto-memory  [TARGET=…]` | uninstall it |
@@ -56,6 +73,7 @@ dotfiles/
 │   └── lib/
 │       ├── detect-os.sh           # → mac | linux | wsl | windows | unknown
 │       ├── symlink.sh             # idempotent symlink + backup helpers
+│       ├── ssh-check.sh           # report-only remote-login check (for Terminus)
 │       └── greet.sh               # geeky welcome (figlet/lolcat or ANSI)
 ├── pkgs/
 │   ├── Brewfile                   # mac packages (incl. claude-code + codex casks)

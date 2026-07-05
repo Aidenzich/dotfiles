@@ -9,6 +9,17 @@ brew "ripgrep"
 brew "fd"
 brew "fzf"
 
+# Networking / remote access
+# OpenVPN CLI client — connect with: `sudo openvpn --config your.ovpn`.
+# (This is the command-line client, NOT the Tunnelblick GUI.)
+brew "openvpn"
+# Tailscale — mesh VPN. brew ships the CLI + tailscaled daemon; after install
+# start the system daemon once, then bring the node up:
+#   sudo tailscaled install-system-daemon
+#   sudo tailscale up
+# (install/mac.sh prints this reminder after `brew bundle`.)
+brew "tailscale"
+
 # Greeting eye-candy (greet.sh detects + uses these if present)
 brew "figlet"
 brew "lolcat"

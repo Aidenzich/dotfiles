@@ -22,4 +22,15 @@ if ! command -v uv >/dev/null 2>&1; then
   curl -LsSf https://astral.sh/uv/install.sh | sh
 fi
 
+echo "[mac] installing/upgrading Antigravity CLI"
+curl -fsSL https://antigravity.google/cli/install.sh | bash
+
+# Tailscale ships via brew as CLI + daemon, but the system daemon and login
+# are deliberate (privileged) steps we don't automate. Remind the user.
+if command -v tailscale >/dev/null 2>&1 && ! tailscale status >/dev/null 2>&1; then
+  echo "[mac] tailscale installed but not up yet. Start it with:"
+  echo "        sudo tailscaled install-system-daemon"
+  echo "        sudo tailscale up"
+fi
+
 bash "$DOTFILES_ROOT/install/common.sh"

@@ -15,6 +15,12 @@ figlet
 # lolcat ships via rubygems on most distros; install manually with:
 #   sudo gem install lolcat
 
+# OpenVPN CLI client. Debian/Ubuntu/Fedora/Arch all spell it `openvpn`.
+# Connect with: sudo openvpn --config your.ovpn
+# (Tailscale is NOT here — it's installed via its official script in
+# install/linux.sh because it isn't in the default distro repos.)
+openvpn
+
 # Node + npm — needed to install npm-global tools (see pkgs/npm-global.txt).
 # apt's nodejs is typically the previous LTS; for fresher versions install
 # nvm/fnm manually after bootstrap. Both names are required on debian/ubuntu

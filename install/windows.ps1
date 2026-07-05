@@ -37,6 +37,10 @@ if (-not (Get-Command uv -ErrorAction SilentlyContinue)) {
   powershell -ExecutionPolicy ByPass -Command "irm https://astral.sh/uv/install.ps1 | iex"
 }
 
+# ---------- Antigravity CLI ----------
+Write-Host "[win] installing/upgrading Antigravity CLI"
+powershell -ExecutionPolicy ByPass -Command "irm https://antigravity.google/cli/install.ps1 | iex"
+
 # ---------- npm globals (e.g. @openai/codex) ----------
 $npmGlobalsFile = Join-Path $DotfilesRoot "pkgs\npm-global.txt"
 if (Test-Path $npmGlobalsFile) {
@@ -74,6 +78,28 @@ Get-Content $symlinksFile | Where-Object { $_ -notmatch '^\s*(#|$)' } | ForEach-
   if (-not (Test-Path $parent)) { New-Item -ItemType Directory -Path $parent -Force | Out-Null }
   New-Item -ItemType SymbolicLink -Path $dst -Target $src -Force | Out-Null
   Write-Host "  link   $dst → $src"
+}
+
+# ---------- SSH / remote-login check (report-only, for Terminus) ----------
+# Doctor, not fixer: we detect the OpenSSH Server state and print the enable
+# commands, but never start/enable the service silently (it opens port 22).
+Write-Host ""
+Write-Host "[ssh] checking remote-login (so Terminus can connect)…"
+$sshdSvc = Get-Service -Name sshd -ErrorAction SilentlyContinue
+if ($null -eq $sshdSvc) {
+  Write-Host "  x OpenSSH Server not installed. Install + enable it (elevated PowerShell):" -ForegroundColor Red
+  Write-Host "      Add-WindowsCapability -Online -Name OpenSSH.Server~~~~0.0.1.0" -ForegroundColor Yellow
+  Write-Host "      Start-Service sshd; Set-Service -Name sshd -StartupType Automatic" -ForegroundColor Yellow
+  Write-Host "      New-NetFirewallRule -Name sshd -DisplayName 'OpenSSH Server' -Enabled True -Direction Inbound -Protocol TCP -Action Allow -LocalPort 22"
+} elseif ($sshdSvc.Status -ne 'Running') {
+  Write-Host "  x OpenSSH Server installed but not running. Start it (elevated):" -ForegroundColor Red
+  Write-Host "      Start-Service sshd; Set-Service -Name sshd -StartupType Automatic" -ForegroundColor Yellow
+} else {
+  Write-Host "  ok sshd is running — remote SSH looks ready." -ForegroundColor Green
+  $lan = (Get-NetIPAddress -AddressFamily IPv4 -ErrorAction SilentlyContinue |
+    Where-Object { $_.IPAddress -notlike '127.*' -and $_.IPAddress -notlike '169.254.*' } |
+    Select-Object -First 1).IPAddress
+  if ($lan) { Write-Host "     via LAN: ssh $env:USERNAME@$lan" }
 }
 
 # ---------- geeky welcome ----------

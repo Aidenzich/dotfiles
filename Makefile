@@ -8,7 +8,7 @@ DOTFILES_CLAUDE := $(DOTFILES_ROOT)/claude
 # `make -f /path/to/dotfiles/Makefile claude-disable-auto-memory` works).
 TARGET ?= $(CURDIR)
 
-.PHONY: help init init-mac init-linux init-windows symlinks doctor greet \
+.PHONY: help init init-mac init-linux init-windows symlinks doctor greet ssh-check \
         claude-disable-auto-memory claude-enable-auto-memory claude-list-memory
 
 help:
@@ -20,6 +20,7 @@ help:
 	@echo "  make init-windows              print the pwsh command for windows.ps1"
 	@echo "  make symlinks                  re-run only the symlink step"
 	@echo "  make doctor                    print detected OS + which tools are installed"
+	@echo "  make ssh-check                 check if remote SSH is on (for Terminus)"
 	@echo "  make greet                     just print the welcome (sanity-check)"
 	@echo
 	@echo "  make claude-disable-auto-memory [TARGET=/path/to/project]"
@@ -58,12 +59,15 @@ symlinks:
 greet:
 	@bash $(DOTFILES_ROOT)/install/lib/greet.sh
 
+ssh-check:
+	@bash $(DOTFILES_ROOT)/install/lib/ssh-check.sh || true
+
 doctor:
 	@echo "detected os : $$(bash $(DOTFILES_ROOT)/install/lib/detect-os.sh)"
 	@echo "dotfiles    : $(DOTFILES_ROOT)"
 	@echo "git user    : $$(git config --global user.name 2>/dev/null || echo '(unset)')"
 	@echo "tools:"
-	@for cmd in git jq tmux brew apt-get dnf pacman winget figlet lolcat uv gh fzf rg fd node npm codex claude; do \
+	@for cmd in git jq tmux brew apt-get dnf pacman winget figlet lolcat uv gh fzf rg fd node npm codex claude agy openvpn tailscale ssh; do \
 	  if command -v $$cmd >/dev/null 2>&1; then \
 	    printf '  \033[32m✓\033[0m %s  (%s)\n' "$$cmd" "$$(command -v $$cmd)"; \
 	  else \

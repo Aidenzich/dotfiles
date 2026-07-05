@@ -49,6 +49,20 @@ if ! command -v uv >/dev/null 2>&1; then
   curl -LsSf https://astral.sh/uv/install.sh | sh
 fi
 
+# Tailscale — not in default distro repos, so use the official installer
+# (adds Tailscale's apt/dnf repo + installs the package). WSL is skipped
+# because tailscaled needs systemd/tun that plain WSL lacks.
+if [ "$(bash "$DOTFILES_ROOT/install/lib/detect-os.sh")" = "wsl" ]; then
+  echo "[linux] WSL detected — skipping Tailscale (no systemd/tun by default)."
+elif ! command -v tailscale >/dev/null 2>&1; then
+  echo "[linux] installing Tailscale via official script"
+  curl -fsSL https://tailscale.com/install.sh | sh
+  echo "[linux] tailscale installed. Bring the node up with: sudo tailscale up"
+fi
+
+echo "[linux] installing/upgrading Antigravity CLI"
+curl -fsSL https://antigravity.google/cli/install.sh | bash
+
 # Install npm globals (e.g. @openai/codex). Skipped silently if npm is absent
 # — happens if the user's distro ships a different nodejs package set.
 NPM_GLOBALS_FILE="$DOTFILES_ROOT/pkgs/npm-global.txt"

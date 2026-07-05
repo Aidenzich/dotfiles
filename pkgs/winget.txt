@@ -17,3 +17,9 @@ OpenJS.NodeJS.LTS
 
 # WezTerm — cross-platform GPU terminal (Lua config shared with mac/linux).
 wez.wezterm
+
+# Networking / remote access.
+# OpenVPN Connect — official client (bundles the openvpn CLI + GUI).
+OpenVPNTechnologies.OpenVPNConnect
+# Tailscale — mesh VPN. After install, run `tailscale up` (elevated) to log in.
+tailscale.tailscale
