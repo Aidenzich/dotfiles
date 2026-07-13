@@ -9,7 +9,7 @@ DOTFILES_CLAUDE := $(DOTFILES_ROOT)/claude
 TARGET ?= $(CURDIR)
 
 .PHONY: help init init-mac init-linux init-windows symlinks doctor greet ssh-check \
-        claude-disable-auto-memory claude-enable-auto-memory claude-list-memory
+        iterm2 claude-disable-auto-memory claude-enable-auto-memory claude-list-memory
 
 help:
 	@echo "dotfiles bootstrap"
@@ -22,6 +22,7 @@ help:
 	@echo "  make doctor                    print detected OS + which tools are installed"
 	@echo "  make ssh-check                 check if remote SSH is on (for Terminus)"
 	@echo "  make greet                     just print the welcome (sanity-check)"
+	@echo "  make iterm2 [PROFILE=Default]  apply mouse settings + per-session tmux integration"
 	@echo
 	@echo "  make claude-disable-auto-memory [TARGET=/path/to/project]"
 	@echo "  make claude-enable-auto-memory  [TARGET=/path/to/project]"
@@ -61,6 +62,9 @@ greet:
 
 ssh-check:
 	@bash $(DOTFILES_ROOT)/install/lib/ssh-check.sh || true
+
+iterm2:
+	@bash $(DOTFILES_ROOT)/install/iterm2.sh "$(or $(PROFILE),Default)"
 
 doctor:
 	@echo "detected os : $$(bash $(DOTFILES_ROOT)/install/lib/detect-os.sh)"
