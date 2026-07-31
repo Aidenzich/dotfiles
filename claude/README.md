@@ -27,6 +27,36 @@ These scripts make the rule enforceable instead of advisory.
 | `scripts/install-block-auto-memory.sh [project_dir]` | Idempotently merges the snippet into `<project>/.claude/settings.json` via jq. Safe to re-run. |
 | `scripts/uninstall-block-auto-memory.sh [project_dir]` | Removes the hook from `<project>/.claude/settings.json`. |
 | `scripts/list-memory.sh [project_dir]` | Prints existing auto-memory files for the project so they can be hand-migrated to `.agent-lessons/lessons/`. |
+| `scripts/ssh-oauth-token.sh` | Installs, checks, or removes a private SSH-only OAuth token wrapper for Claude Code on macOS. See `docs/macos-ssh-claude-code-oauth-token-sop.md`. |
+
+## macOS SSH OAuth token
+
+Install from an existing single-line raw token file without printing its content:
+
+```bash
+make claude-ssh-oauth-install TOKEN_FILE=/path/to/raw-token
+```
+
+Or omit `TOKEN_FILE` to receive a hidden interactive prompt:
+
+```bash
+make claude-ssh-oauth-install
+```
+
+Verify or uninstall:
+
+```bash
+make claude-ssh-oauth-check
+make claude-ssh-oauth-uninstall
+make claude-ssh-oauth-uninstall DELETE_TOKEN=1
+```
+
+The installer is idempotent, backs up `~/.zshrc` before changing it, stores the
+token at `~/.config/claude/ssh-oauth-token` with mode `0600`, and never prints
+the token. If `~/.zshrc` is a symlink, it edits the resolved target atomically
+without replacing the symlink, while keeping unique backups under
+`~/.zshrc.bak.*` rather than inside the target repo. Uninstall retains the
+token unless `DELETE_TOKEN=1` is explicit.
 
 ## Per-project usage
 

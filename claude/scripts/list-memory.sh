@@ -5,8 +5,8 @@
 # Usage:
 #   bash list-memory.sh [project_dir]
 #
-# The Claude auto-memory dir name is derived from the project's absolute
-# path, dashed and prefixed: /Users/aiden/Projects/isuper → -Users-aiden-Projects-isuper
+# The Claude auto-memory dir name is derived from the project's expanded
+# absolute path: ~/Projects/example → -Users-<account>-Projects-example (macOS)
 
 set -euo pipefail
 

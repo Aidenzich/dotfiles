@@ -73,11 +73,16 @@ set_profile_string() {
   fi
 }
 
-# Keep mouse-aware terminal apps working, while preventing alternate-screen
-# dashboards from growing scrollback when a local selection drag scrolls.
+# Keep click/drag reporting available to mouse-aware terminal apps, but reserve
+# the wheel for native iTerm2 scrollback. Preserve output produced by tmux and
+# full-screen TUIs so Claude/Codex history remains scrollable.
 set_profile_bool 'Mouse Reporting' true
-set_profile_bool 'Scrollback in Alternate Screen' false
-set_profile_bool 'Scrollback With Status Bar' false
+set_profile_bool 'Mouse Reporting allow mouse wheel' false
+set_profile_bool 'Mouse Reporting allow clicks and drags' true
+set_profile_bool 'Allow Alternate Mouse Scroll' false
+set_profile_bool 'Automatically Enable Alternate Mouse Scroll' false
+set_profile_bool 'Scrollback in Alternate Screen' true
+set_profile_bool 'Scrollback With Status Bar' true
 set_profile_bool 'Drag to Scroll in Alternate Screen Mode Disabled' true
 # watch-all relies on the standard smcup/rmcup alternate-screen lifecycle.
 set_profile_bool 'Disable Smcup Rmcup' false
@@ -95,6 +100,10 @@ echo "[iterm2] profile: $PROFILE_NAME"
 echo "[iterm2] tmux lifecycle: one iterm-<session UUID> per iTerm2 session"
 for key in \
   'Mouse Reporting' \
+  'Mouse Reporting allow mouse wheel' \
+  'Mouse Reporting allow clicks and drags' \
+  'Allow Alternate Mouse Scroll' \
+  'Automatically Enable Alternate Mouse Scroll' \
   'Scrollback in Alternate Screen' \
   'Scrollback With Status Bar' \
   'Drag to Scroll in Alternate Screen Mode Disabled' \
