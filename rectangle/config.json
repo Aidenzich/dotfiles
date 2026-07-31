@@ -1,0 +1,28 @@
+{
+  "preferences": {
+    "allowAnyShortcut": false,
+    "alternateDefaultShortcuts": true
+  },
+  "shortcuts": {
+    "leftHalf": {
+      "keyCode": 123,
+      "modifierFlags": 1441792
+    },
+    "maximize": {
+      "keyCode": 36,
+      "modifierFlags": 1441792
+    },
+    "reflowTodo": {
+      "keyCode": 45,
+      "modifierFlags": 786432
+    },
+    "rightHalf": {
+      "keyCode": 124,
+      "modifierFlags": 1441792
+    },
+    "toggleTodo": {
+      "keyCode": 11,
+      "modifierFlags": 786432
+    }
+  }
+}

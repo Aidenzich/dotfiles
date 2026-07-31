@@ -16,6 +16,9 @@ fi
 echo "[mac] running brew bundle from pkgs/Brewfile"
 brew bundle --file="$DOTFILES_ROOT/pkgs/Brewfile"
 
+echo "[mac] configuring Rectangle"
+bash "$DOTFILES_ROOT/install/rectangle.sh"
+
 echo "[mac] verifying uv"
 if ! command -v uv >/dev/null 2>&1; then
   echo "[mac] uv missing after brew bundle — installing via official script"
