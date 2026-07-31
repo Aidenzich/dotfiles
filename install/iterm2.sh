@@ -74,6 +74,18 @@ set_profile_string() {
   fi
 }
 
+set_profile_json() {
+  local key="$1"
+  local value="$2"
+  local path="New Bookmarks.${profile_index}.${key}"
+
+  if plutil -extract "$path" raw -o - "$tmp" >/dev/null 2>&1; then
+    plutil -replace "$path" -json "$value" "$tmp"
+  else
+    plutil -insert "$path" -json "$value" "$tmp"
+  fi
+}
+
 # Keep click/drag reporting available to mouse-aware terminal apps, but reserve
 # the wheel for native iTerm2 scrollback. Preserve output produced by tmux and
 # full-screen TUIs so Claude/Codex history remains scrollable.
@@ -93,6 +105,13 @@ set_profile_bool 'Disable Smcup Rmcup' false
 # when its owning iTerm2 session closes.
 set_profile_string 'Command' "$tmux_command"
 set_profile_string 'Custom Command' 'Yes'
+
+# Traditional terminals encode Return and Shift-Return identically. Give
+# Shift-Return an explicit Esc+Return sequence so multiline-capable terminal
+# apps (including Claude Code and Codex) can distinguish it across tmux + SSH.
+# This updates only this shortcut and preserves all other profile key mappings.
+set_profile_json 'Keyboard Map.0xd-0x20000' \
+  '{"Action":11,"Text":"0x1b 0x0d"}'
 
 defaults import "$DOMAIN" "$tmp" >/dev/null
 defaults export "$DOMAIN" "$verify_tmp" >/dev/null
@@ -134,6 +153,8 @@ for key in 'Command' 'Custom Command'; do
   value="$(plutil -extract "New Bookmarks.${profile_index}.${key}" raw -o - "$verify_tmp")"
   printf '[iterm2]   %-52s %s\n' "$key" "$value"
 done
+key_mapping="$(plutil -extract "New Bookmarks.${profile_index}.Keyboard Map.0xd-0x20000" json -o - "$verify_tmp")"
+printf '[iterm2]   %-52s %s\n' 'Shift-Return key mapping' "$(jq -c . <<<"$key_mapping")"
 
 echo "[iterm2] backup: $backup"
 if [[ "$live_refresh_succeeded" == true ]]; then
