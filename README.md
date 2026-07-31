@@ -17,7 +17,7 @@ make init
    - `install/windows.ps1` — winget from `pkgs/winget.txt` (incl. `OpenJS.NodeJS.LTS`), `uv` + Antigravity CLI via official PowerShell scripts, then `npm i -g` every entry in `pkgs/npm-global.txt`. Must be invoked via `pwsh`, not GNU make.
 2. **Symlinks** every entry in `install/symlinks.txt` into `$HOME`, backing up any existing file to `<dst>.bak.<timestamp>`.
 3. **SSH remote-login check** via `install/lib/ssh-check.sh` — report-only. Detects whether inbound SSH is on (so a remote client like [Terminus](https://termius.com/) can connect) and, if it's off, prints the exact enable command for your OS. It never flips the setting itself. Also prints your reachable addresses (Tailscale IP + LAN IP) as connect hints.
-4. **Configures iTerm2 on macOS** via `install/iterm2.sh`: keeps mouse reporting enabled, disables alternate-screen/status-bar scrollback, disables drag-to-scroll in alternate screen, and preserves the standard `smcup`/`rmcup` lifecycle. Each profile invocation gets a uniquely named `iterm-<UUID>` tmux control-mode session, so its windows and panes use native iTerm2 tabs and splits. You can attach another client while it is alive; closing the owning iTerm2 session destroys its tmux session. The current preference domain is backed up before every application.
+4. **Configures iTerm2 on macOS** via `install/iterm2.sh`: keeps click/drag reporting enabled while reserving the mouse wheel for native iTerm2 scrollback, saves alternate-screen/status-bar output, disables alternate mouse scroll, and preserves the standard `smcup`/`rmcup` lifecycle. Each profile invocation gets a uniquely named `iterm-<UUID>` tmux control-mode session, so its windows and panes use native iTerm2 tabs and splits. You can attach another client while it is alive; closing the owning iTerm2 session destroys its tmux session. The current preference domain is backed up before every application.
 5. **Greets** via `install/lib/greet.sh` — geeky welcome using `git config --global user.name`. Uses `figlet`+`lolcat` for ASCII art if installed, else falls back to an ANSI block.
 
 ### VPN & remote access
@@ -56,10 +56,13 @@ The `claude` and `codex` casks are CLI binaries (not GUI `.app`s — Homebrew's 
 | `make doctor` | print detected OS + which expected tools are installed (now incl. `openvpn`, `tailscale`, `ssh`) |
 | `make ssh-check` | check whether inbound SSH is on (for Terminus) + print connect hints |
 | `make greet` | sanity-check the welcome script |
-| `make iterm2 [PROFILE=Default]` | apply iTerm2 mouse/scrollback settings and one-to-one tmux session lifecycle |
+| `make iterm2 [PROFILE=Default]` | apply native-wheel scrollback settings and one-to-one tmux session lifecycle |
 | `make claude-disable-auto-memory [TARGET=…]` | install Claude's auto-memory block hook into a project. See `claude/README.md`. |
 | `make claude-enable-auto-memory  [TARGET=…]` | uninstall it |
 | `make claude-list-memory         [TARGET=…]` | list existing auto-memory files (for manual ALR migration) |
+| `make claude-ssh-oauth-install [TOKEN_FILE=…]` | install an SSH-only Claude OAuth token wrapper on macOS |
+| `make claude-ssh-oauth-check` | verify token permissions, managed wrapper, and zsh syntax |
+| `make claude-ssh-oauth-uninstall [DELETE_TOKEN=1]` | remove the managed wrapper; retain the token unless explicitly deleted |
 
 ## Layout
 

@@ -118,7 +118,7 @@ npm() { _lazy_load_nvm npm "$@"; }
 npx() { _lazy_load_nvm npx "$@"; }
 yarn() { _lazy_load_nvm yarn "$@"; }
 
-alias ag="antigravity"
+alias ag="agy"
 
 sync-skills() {
   local SOURCE_DIR="$HOME/.agents/skills"

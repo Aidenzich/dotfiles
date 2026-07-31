@@ -9,7 +9,8 @@ DOTFILES_CLAUDE := $(DOTFILES_ROOT)/claude
 TARGET ?= $(CURDIR)
 
 .PHONY: help init init-mac init-linux init-windows symlinks doctor greet ssh-check \
-        iterm2 claude-disable-auto-memory claude-enable-auto-memory claude-list-memory
+        iterm2 claude-disable-auto-memory claude-enable-auto-memory claude-list-memory \
+        claude-ssh-oauth-install claude-ssh-oauth-check claude-ssh-oauth-uninstall
 
 help:
 	@echo "dotfiles bootstrap"
@@ -22,11 +23,14 @@ help:
 	@echo "  make doctor                    print detected OS + which tools are installed"
 	@echo "  make ssh-check                 check if remote SSH is on (for Terminus)"
 	@echo "  make greet                     just print the welcome (sanity-check)"
-	@echo "  make iterm2 [PROFILE=Default]  apply mouse settings + per-session tmux integration"
+	@echo "  make iterm2 [PROFILE=Default]  apply native-wheel scrollback + per-session tmux integration"
 	@echo
 	@echo "  make claude-disable-auto-memory [TARGET=/path/to/project]"
 	@echo "  make claude-enable-auto-memory  [TARGET=/path/to/project]"
 	@echo "  make claude-list-memory         [TARGET=/path/to/project]"
+	@echo "  make claude-ssh-oauth-install   [TOKEN_FILE=/path/to/raw-token]"
+	@echo "  make claude-ssh-oauth-check"
+	@echo "  make claude-ssh-oauth-uninstall [DELETE_TOKEN=1]"
 
 init:
 	@os=$$(bash $(DOTFILES_ROOT)/install/lib/detect-os.sh); \
@@ -88,3 +92,15 @@ claude-enable-auto-memory:
 
 claude-list-memory:
 	@bash $(DOTFILES_CLAUDE)/scripts/list-memory.sh "$(TARGET)"
+
+# --- Claude OAuth for macOS SSH shells ---
+claude-ssh-oauth-install:
+	@bash $(DOTFILES_CLAUDE)/scripts/ssh-oauth-token.sh install \
+	  $(if $(TOKEN_FILE),--token-file "$(TOKEN_FILE)")
+
+claude-ssh-oauth-check:
+	@bash $(DOTFILES_CLAUDE)/scripts/ssh-oauth-token.sh check
+
+claude-ssh-oauth-uninstall:
+	@bash $(DOTFILES_CLAUDE)/scripts/ssh-oauth-token.sh uninstall \
+	  $(if $(filter 1,$(DELETE_TOKEN)),--delete-token)
