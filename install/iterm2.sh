@@ -8,6 +8,7 @@ PROFILE_NAME="${1:-${ITERM_PROFILE_NAME:-Default}}"
 PREFS_DIR="$HOME/Library/Preferences"
 DOTFILES_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 TMUX_LAUNCHER="$DOTFILES_ROOT/install/iterm2-tmux-session.sh"
+LIVE_PROFILE_APPLIER="$DOTFILES_ROOT/install/iterm2-live-profile.py"
 
 if [[ "$(uname -s)" != "Darwin" ]]; then
   echo "[iterm2] skipped: macOS only"
@@ -96,6 +97,24 @@ set_profile_string 'Custom Command' 'Yes'
 defaults import "$DOMAIN" "$tmp" >/dev/null
 defaults export "$DOMAIN" "$verify_tmp" >/dev/null
 
+# iTerm2 caches a session-local profile while the app is running. Updating the
+# preference plist alone does not change already-open Default/tmux sessions.
+# When the local API is enabled, refresh those sessions in place so no restart
+# (which could destroy an integration-owned tmux session) is necessary.
+live_refresh_succeeded=false
+if pgrep -x iTerm2 >/dev/null 2>&1 \
+  && [[ "$(defaults read "$DOMAIN" NoSyncEnableAPIServer 2>/dev/null || true)" == "1" ]] \
+  && command -v uv >/dev/null 2>&1 \
+  && [[ -f "$LIVE_PROFILE_APPLIER" ]]; then
+  if uv run --quiet --with iterm2 python "$LIVE_PROFILE_APPLIER" "$PROFILE_NAME"; then
+    live_refresh_succeeded=true
+  else
+    echo "[iterm2] warning: live sessions were not updated; new sessions will use the saved profile" >&2
+  fi
+else
+  echo "[iterm2] live session refresh skipped; saved profile will apply on next iTerm2 launch"
+fi
+
 echo "[iterm2] profile: $PROFILE_NAME"
 echo "[iterm2] tmux lifecycle: one iterm-<session UUID> per iTerm2 session"
 for key in \
@@ -117,4 +136,8 @@ for key in 'Command' 'Custom Command'; do
 done
 
 echo "[iterm2] backup: $backup"
-echo "[iterm2] open a new iTerm2 session (or restart iTerm2) to guarantee the profile reloads"
+if [[ "$live_refresh_succeeded" == true ]]; then
+  echo "[iterm2] live sessions refreshed; no iTerm2 restart required"
+else
+  echo "[iterm2] open a new iTerm2 session (or restart iTerm2) to load the saved profile"
+fi

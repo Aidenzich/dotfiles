@@ -29,4 +29,11 @@ trap 'exit 129' HUP
 trap 'exit 130' INT
 trap 'exit 143' TERM
 
-"$tmux_bin" -CC new-session -A -s "$session_name"
+# Native iTerm2 tmux integration owns pane selection, resizing, and scrollback.
+# Disable tmux mouse handling only for this integration session so wheel events
+# stay with iTerm2; ordinary tmux sessions keep the global `mouse on` default.
+if ! "$tmux_bin" has-session -t "$session_name" >/dev/null 2>&1; then
+  "$tmux_bin" new-session -d -s "$session_name"
+fi
+"$tmux_bin" set-option -t "$session_name" mouse off
+"$tmux_bin" -CC attach-session -t "$session_name"
