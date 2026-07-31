@@ -12,13 +12,14 @@ make init
 ## What `make init` does
 
 1. **Detect OS** via `install/lib/detect-os.sh` → routes to one of:
-   - `install/mac.sh` — ensures Homebrew, runs `brew bundle pkgs/Brewfile` (which includes `node` + the `claude-code` and `codex` CLI casks), then installs/upgrades Antigravity CLI via Google's installer.
+   - `install/mac.sh` — ensures Homebrew, runs `brew bundle pkgs/Brewfile` (which includes Rectangle, `node`, and the `claude-code` and `codex` CLI casks), applies the managed Rectangle shortcuts, then installs/upgrades Antigravity CLI via Google's installer.
    - `install/linux.sh` — picks the right pm (apt/dnf/pacman/zypper/apk), installs `pkgs/linux.txt` (incl. `nodejs npm`), installs `uv` + Antigravity CLI via official scripts, then `npm i -g` every entry in `pkgs/npm-global.txt`.
    - `install/windows.ps1` — winget from `pkgs/winget.txt` (incl. `OpenJS.NodeJS.LTS`), `uv` + Antigravity CLI via official PowerShell scripts, then `npm i -g` every entry in `pkgs/npm-global.txt`. Must be invoked via `pwsh`, not GNU make.
 2. **Symlinks** every entry in `install/symlinks.txt` into `$HOME`, backing up any existing file to `<dst>.bak.<timestamp>`.
 3. **SSH remote-login check** via `install/lib/ssh-check.sh` — report-only. Detects whether inbound SSH is on (so a remote client like [Terminus](https://termius.com/) can connect) and, if it's off, prints the exact enable command for your OS. It never flips the setting itself. Also prints your reachable addresses (Tailscale IP + LAN IP) as connect hints.
-4. **Configures iTerm2 on macOS** via `install/iterm2.sh`: keeps click/drag reporting enabled while reserving the mouse wheel for native iTerm2 scrollback, saves alternate-screen/status-bar output, disables alternate mouse scroll, and preserves the standard `smcup`/`rmcup` lifecycle. Each profile invocation gets a uniquely named `iterm-<UUID>` tmux control-mode session with tmux mouse handling disabled for that session only, so its windows and panes use native iTerm2 tabs, splits, and scrollback while ordinary tmux sessions retain the global `mouse on` behavior. When iTerm2's local API is enabled, the installer also refreshes already-open Default/runtime `tmux` sessions in place; otherwise the saved profile applies on the next launch. You can attach another client while it is alive; closing the owning iTerm2 session destroys its tmux session. The current preference domain is backed up before every application.
-5. **Greets** via `install/lib/greet.sh` — geeky welcome using `git config --global user.name`. Uses `figlet`+`lolcat` for ASCII art if installed, else falls back to an ANSI block.
+4. **Installs and configures Rectangle on macOS** via `install/rectangle.sh`: applies only the version-controlled preferences and shortcuts in `rectangle/config.json`, verifies them by reading the preference domain back, and preserves all unmanaged Rectangle settings.
+5. **Configures iTerm2 on macOS** via `install/iterm2.sh`: keeps click/drag reporting enabled while reserving the mouse wheel for native iTerm2 scrollback, saves alternate-screen/status-bar output, disables alternate mouse scroll, and preserves the standard `smcup`/`rmcup` lifecycle. Each profile invocation gets a uniquely named `iterm-<UUID>` tmux control-mode session with tmux mouse handling disabled for that session only, so its windows and panes use native iTerm2 tabs, splits, and scrollback while ordinary tmux sessions retain the global `mouse on` behavior. When iTerm2's local API is enabled, the installer also refreshes already-open Default/runtime `tmux` sessions in place; otherwise the saved profile applies on the next launch. You can attach another client while it is alive; closing the owning iTerm2 session destroys its tmux session. The current preference domain is backed up before every application.
+6. **Greets** via `install/lib/greet.sh` — geeky welcome using `git config --global user.name`. Uses `figlet`+`lolcat` for ASCII art if installed, else falls back to an ANSI block.
 
 ### VPN & remote access
 
@@ -57,6 +58,7 @@ The `claude` and `codex` casks are CLI binaries (not GUI `.app`s — Homebrew's 
 | `make ssh-check` | check whether inbound SSH is on (for Terminus) + print connect hints |
 | `make greet` | sanity-check the welcome script |
 | `make iterm2 [PROFILE=Default]` | apply native-wheel scrollback settings and one-to-one tmux session lifecycle |
+| `make rectangle` | install Rectangle if needed and reapply the managed shortcuts |
 | `make claude-disable-auto-memory [TARGET=…]` | install Claude's auto-memory block hook into a project. See `claude/README.md`. |
 | `make claude-enable-auto-memory  [TARGET=…]` | uninstall it |
 | `make claude-list-memory         [TARGET=…]` | list existing auto-memory files (for manual ALR migration) |
@@ -72,6 +74,7 @@ dotfiles/
 ├── install/
 │   ├── common.sh                  # OS-agnostic post-install (symlinks + greet)
 │   ├── mac.sh                     # brew bundle
+│   ├── rectangle.sh               # Rectangle install + managed shortcut settings
 │   ├── iterm2-tmux-session.sh     # one iTerm session ↔ one tmux session lifecycle
 │   ├── iterm2-live-profile.py     # refresh already-open iTerm session profiles
 │   ├── iterm2.sh                  # idempotent iTerm2 + tmux integration settings and backup
@@ -88,6 +91,8 @@ dotfiles/
 │   ├── linux.txt                  # debian/ubuntu names (other distros: edit)
 │   ├── winget.txt                 # winget package IDs
 │   └── npm-global.txt             # `npm i -g <line>` for linux + windows (mac skips — brew handles)
+├── rectangle/
+│   └── config.json                # managed Rectangle preferences + shortcuts
 ├── claude/                        # auto-memory hardening — see claude/README.md
 ├── .tmux.conf                     # symlinked to ~/.tmux.conf
 ├── .zshrc                         # guarded cross-OS zsh setup

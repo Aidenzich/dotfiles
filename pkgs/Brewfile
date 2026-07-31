@@ -33,6 +33,10 @@ brew "uv"
 # default config: ~/.wezterm.lua or ~/.config/wezterm/wezterm.lua.
 cask "wezterm"
 
+# Rectangle — keyboard-driven window management. install/rectangle.sh applies
+# the version-controlled shortcuts after brew bundle finishes.
+cask "rectangle"
+
 # Node + npm (brew "node" includes npm). Non-mac paths install node via the
 # system pm + then `npm i -g` from pkgs/npm-global.txt; mac skips that step
 # because brew handles codex natively (cask below).
