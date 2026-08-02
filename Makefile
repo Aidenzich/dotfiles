@@ -7,15 +7,17 @@ DOTFILES_CLAUDE := $(DOTFILES_ROOT)/claude
 # Default: current working directory (so cd'ing into a project and running
 # `make -f /path/to/dotfiles/Makefile claude-disable-auto-memory` works).
 TARGET ?= $(CURDIR)
+ITERM2_TMUX_MODE ?= local
 
-.PHONY: help init init-mac init-linux init-windows symlinks doctor greet ssh-check \
+.PHONY: help init init-mac init-linux init-windows symlinks doctor greet ssh-check test-iterm2 \
         iterm2 rectangle claude-disable-auto-memory claude-enable-auto-memory claude-list-memory \
         claude-ssh-oauth-install claude-ssh-oauth-check claude-ssh-oauth-uninstall
 
 help:
 	@echo "dotfiles bootstrap"
 	@echo
-	@echo "  make init                      auto-detect OS and run the right installer"
+	@echo "  make init [ITERM2_TMUX_MODE=local|off]"
+	@echo "                                 auto-detect OS and run the right installer"
 	@echo "  make init-mac                  force mac path (brew bundle + common)"
 	@echo "  make init-linux                force linux/wsl path (apt|dnf|… + uv + common)"
 	@echo "  make init-windows              print the pwsh command for windows.ps1"
@@ -23,7 +25,9 @@ help:
 	@echo "  make doctor                    print detected OS + which tools are installed"
 	@echo "  make ssh-check                 check if remote SSH is on (for Terminus)"
 	@echo "  make greet                     just print the welcome (sanity-check)"
-	@echo "  make iterm2 [PROFILE=Default]  apply native-wheel scrollback + per-session tmux integration"
+	@echo "  make iterm2 [PROFILE=Default] [ITERM2_TMUX_MODE=local|off]"
+	@echo "                                 apply iTerm settings and enable/disable local tmux integration"
+	@echo "  make test-iterm2               verify local/off profile transitions in an isolated preferences domain"
 	@echo "  make rectangle                 install Rectangle + apply managed shortcuts"
 	@echo
 	@echo "  make claude-disable-auto-memory [TARGET=/path/to/project]"
@@ -44,7 +48,7 @@ init:
 	esac
 
 init-mac:
-	@bash $(DOTFILES_ROOT)/install/mac.sh
+	@ITERM2_TMUX_MODE="$(ITERM2_TMUX_MODE)" bash $(DOTFILES_ROOT)/install/mac.sh
 
 init-linux:
 	@bash $(DOTFILES_ROOT)/install/linux.sh
@@ -69,7 +73,10 @@ ssh-check:
 	@bash $(DOTFILES_ROOT)/install/lib/ssh-check.sh || true
 
 iterm2:
-	@bash $(DOTFILES_ROOT)/install/iterm2.sh "$(or $(PROFILE),Default)"
+	@ITERM2_TMUX_MODE="$(ITERM2_TMUX_MODE)" bash $(DOTFILES_ROOT)/install/iterm2.sh "$(or $(PROFILE),Default)"
+
+test-iterm2:
+	@bash $(DOTFILES_ROOT)/tests/iterm2-mode.sh
 
 rectangle:
 	@bash $(DOTFILES_ROOT)/install/rectangle.sh

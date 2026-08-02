@@ -220,7 +220,7 @@ claude() {
       return 1
     fi
 
-    export CLAUDE_CODE_SUBPROCESS_ENV_SCRUB=1
+    export CLAUDE_CODE_SUBPROCESS_ENV_SCRUB="${CLAUDE_CODE_SUBPROCESS_ENV_SCRUB:-1}"
     command "$claude_bin" "$@"
   )
 }

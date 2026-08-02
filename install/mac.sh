@@ -37,6 +37,7 @@ if command -v tailscale >/dev/null 2>&1 && ! tailscale status >/dev/null 2>&1; t
 fi
 
 if [[ -d /Applications/iTerm.app ]] || defaults export com.googlecode.iterm2 - >/dev/null 2>&1; then
+  echo "[mac] configuring iTerm2 (tmux mode: ${ITERM2_TMUX_MODE:-local})"
   bash "$DOTFILES_ROOT/install/iterm2.sh"
 else
   echo "[mac] iTerm2 not installed/configured; skipping profile settings"

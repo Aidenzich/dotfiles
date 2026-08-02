@@ -58,6 +58,17 @@ without replacing the symlink, while keeping unique backups under
 `~/.zshrc.bak.*` rather than inside the target repo. Uninstall retains the
 token unless `DELETE_TOKEN=1` is explicit.
 
+The SSH wrapper defaults `CLAUDE_CODE_SUBPROCESS_ENV_SCRUB` to `1`, preventing
+Claude-launched subprocesses from inheriting Anthropic and cloud-provider
+credentials. In Claude Code 2.1.220 that hardening also forces permission mode
+back to `default`. A trusted workflow that explicitly needs another supported
+permission mode can opt out for one invocation, accepting that subprocesses may
+inherit the injected OAuth credential:
+
+```bash
+CLAUDE_CODE_SUBPROCESS_ENV_SCRUB=0 claude
+```
+
 ## Per-project usage
 
 In any project Makefile that wants this behavior, add:
