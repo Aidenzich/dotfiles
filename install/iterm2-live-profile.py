@@ -21,7 +21,7 @@ if tmux_mode not in {"local", "off"}:
 
 async def apply_scrollback_settings(profile):
     await profile.async_set_mouse_reporting(True)
-    await profile.async_set_mouse_reporting_allow_mouse_wheel(False)
+    await profile.async_set_mouse_reporting_allow_mouse_wheel(True)
     await profile.async_set_scrollback_in_alternate_screen(True)
     await profile.async_set_scrollback_with_status_bar(True)
     await profile.async_set_disable_smcup_rmcup(False)
