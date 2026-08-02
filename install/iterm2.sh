@@ -106,14 +106,15 @@ managed_profile_rows="$(
   ' <<<"$profiles_json"
 )"
 
-# Keep click/drag reporting available to mouse-aware terminal apps, but reserve
-# the wheel for native iTerm2 scrollback. Apply the same values to the selected
-# profile and iTerm2's persisted tmux profile so future integration panes do
-# not inherit stale defaults.
+# Report the wheel as a real mouse event whenever the foreground terminal layer
+# requests mouse input. Ordinary tmux then applies our WheelUpPane copy-mode
+# binding instead of letting iTerm2 translate the wheel into Up/Down keys.
+# Control-mode integration sessions explicitly use `mouse off`, so they retain
+# native iTerm2 scrollback. Apply the same values to all managed profiles.
 while IFS=$'\t' read -r managed_index managed_name; do
   [[ -n "$managed_index" ]] || continue
   set_profile_bool "$managed_index" 'Mouse Reporting' true
-  set_profile_bool "$managed_index" 'Mouse Reporting allow mouse wheel' false
+  set_profile_bool "$managed_index" 'Mouse Reporting allow mouse wheel' true
   set_profile_bool "$managed_index" 'Mouse Reporting allow clicks and drags' true
   set_profile_bool "$managed_index" 'Allow Alternate Mouse Scroll' false
   set_profile_bool "$managed_index" 'Automatically Enable Alternate Mouse Scroll' false

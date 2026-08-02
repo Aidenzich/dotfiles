@@ -43,7 +43,7 @@ value() {
 run_mode off
 [[ "$(value 'New Bookmarks.0.Custom Command')" == "No" ]]
 [[ -z "$(value 'New Bookmarks.0.Command')" ]]
-[[ "$(value 'New Bookmarks.0.Mouse Reporting allow mouse wheel')" == "false" ]]
+[[ "$(value 'New Bookmarks.0.Mouse Reporting allow mouse wheel')" == "true" ]]
 [[ "$(value 'New Bookmarks.1.Scrollback in Alternate Screen')" == "true" ]]
 [[ "$(value 'New Bookmarks.1.Command')" == "runtime-command" ]]
 
