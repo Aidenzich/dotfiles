@@ -32,6 +32,7 @@ it also reverses an earlier `local` installation.
 3. **SSH remote-login check** via `install/lib/ssh-check.sh` — report-only. Detects whether inbound SSH is on (so a remote client like [Terminus](https://termius.com/) can connect) and, if it's off, prints the exact enable command for your OS. It never flips the setting itself. Also prints your reachable addresses (Tailscale IP + LAN IP) as connect hints.
 4. **Installs and configures Rectangle on macOS** via `install/rectangle.sh`: applies only the version-controlled preferences and shortcuts in `rectangle/config.json`, verifies them by reading the preference domain back, and preserves all unmanaged Rectangle settings.
 5. **Configures iTerm2 on macOS** via `install/iterm2.sh`: keeps click/drag reporting enabled while reserving the mouse wheel for native iTerm2 scrollback, saves alternate-screen/status-bar output, disables alternate mouse scroll, and preserves the standard `smcup`/`rmcup` lifecycle. Each profile invocation gets a uniquely named `iterm-<UUID>` tmux control-mode session with tmux mouse handling disabled for that session only, so its windows and panes use native iTerm2 tabs, splits, and scrollback while ordinary tmux sessions retain the global `mouse on` behavior. When iTerm2's local API is enabled, the installer refreshes the in-memory `Default`/`tmux` profile templates as well as every already-open matching session, so future sessions do not clone stale settings; otherwise the saved profiles apply on the next launch. You can attach another client while it is alive; closing the owning iTerm2 session destroys its tmux session. The current preference domain is backed up before every application.
+   In ordinary tmux clients, `WheelUpPane` is deliberately bound to tmux copy mode instead of being forwarded to mouse-aware applications. This makes the wheel consistently mean scrollback while keyboard Up/Down remain application input, including `local tmux -> SSH -> remote tmux -> Claude`. The same `.tmux.conf` is used on both machines; the outermost configured tmux handles the wheel.
 6. **Greets** via `install/lib/greet.sh` — geeky welcome using `git config --global user.name`. Uses `figlet`+`lolcat` for ASCII art if installed, else falls back to an ANSI block.
 
 ### VPN & remote access
@@ -72,6 +73,7 @@ The `claude` and `codex` casks are CLI binaries (not GUI `.app`s — Homebrew's 
 | `make greet` | sanity-check the welcome script |
 | `make iterm2 [PROFILE=Default] [ITERM2_TMUX_MODE=local\|off]` | apply iTerm settings and enable/disable the local tmux launcher |
 | `make test-iterm2` | verify `local`/`off` transitions in an isolated macOS preferences domain |
+| `make test-tmux-wheel` | verify wheel-to-scrollback and arrow-key passthrough on both sides of a nested tmux topology |
 | `make rectangle` | install Rectangle if needed and reapply the managed shortcuts |
 | `make claude-disable-auto-memory [TARGET=…]` | install Claude's auto-memory block hook into a project. See `claude/README.md`. |
 | `make claude-enable-auto-memory  [TARGET=…]` | uninstall it |

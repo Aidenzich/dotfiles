@@ -9,7 +9,7 @@ DOTFILES_CLAUDE := $(DOTFILES_ROOT)/claude
 TARGET ?= $(CURDIR)
 ITERM2_TMUX_MODE ?= local
 
-.PHONY: help init init-mac init-linux init-windows symlinks doctor greet ssh-check test-iterm2 \
+.PHONY: help init init-mac init-linux init-windows symlinks doctor greet ssh-check test-iterm2 test-tmux-wheel \
         iterm2 rectangle claude-disable-auto-memory claude-enable-auto-memory claude-list-memory \
         claude-ssh-oauth-install claude-ssh-oauth-check claude-ssh-oauth-uninstall
 
@@ -28,6 +28,7 @@ help:
 	@echo "  make iterm2 [PROFILE=Default] [ITERM2_TMUX_MODE=local|off]"
 	@echo "                                 apply iTerm settings and enable/disable local tmux integration"
 	@echo "  make test-iterm2               verify local/off profile transitions in an isolated preferences domain"
+	@echo "  make test-tmux-wheel           verify wheel scrollback + arrow passthrough across tmux layers"
 	@echo "  make rectangle                 install Rectangle + apply managed shortcuts"
 	@echo
 	@echo "  make claude-disable-auto-memory [TARGET=/path/to/project]"
@@ -77,6 +78,9 @@ iterm2:
 
 test-iterm2:
 	@bash $(DOTFILES_ROOT)/tests/iterm2-mode.sh
+
+test-tmux-wheel:
+	@bash $(DOTFILES_ROOT)/tests/tmux-wheel-scrollback.sh
 
 rectangle:
 	@bash $(DOTFILES_ROOT)/install/rectangle.sh
