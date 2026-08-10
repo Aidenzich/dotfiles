@@ -131,7 +131,7 @@ claude-ssh-oauth-uninstall:
 
 # --- Isolated Claude account homes ---
 claude-add-home:
-	@bash $(DOTFILES_CLAUDE)/scripts/claude-home.sh add "$(ACCOUNT)"
+	@TOKEN_FILE="$(TOKEN_FILE)" bash $(DOTFILES_CLAUDE)/scripts/claude-home.sh add "$(ACCOUNT)"
 
 claude-remove-home:
 	@CONFIRM="$(CONFIRM)" bash $(DOTFILES_CLAUDE)/scripts/claude-home.sh remove "$(ACCOUNT)"

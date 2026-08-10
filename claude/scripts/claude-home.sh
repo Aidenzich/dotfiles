@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Manage isolated Claude Code homes without reading or copying credentials.
+# Manage isolated Claude Code homes with private, process-scoped OAuth tokens.
 
 set -euo pipefail
 
@@ -14,6 +14,9 @@ Usage:
 
 Homes are stored under ~/.claude-accounts by default. Set CLAUDE_HOMES_ROOT to
 override that parent directory, primarily for isolated tests.
+
+If a home has no token, add runs `claude setup-token` and then securely prompts
+for the generated raw token. Set TOKEN_FILE to import one without a prompt.
 EOF
 }
 
@@ -47,6 +50,7 @@ readonly HOMES_ROOT="${CLAUDE_HOMES_ROOT:-$HOME/.claude-accounts}"
 readonly ZSHRC_LINK="${CLAUDE_ZSHRC:-$HOME/.zshrc}"
 readonly MANAGED_BEGIN="# >>> dotfiles claude-homes >>>"
 readonly MANAGED_END="# <<< dotfiles claude-homes <<<"
+readonly TOKEN_SOURCE="${TOKEN_FILE:-}"
 
 account_home() {
   printf '%s/%s\n' "$HOMES_ROOT" "$ACCOUNT"
@@ -57,6 +61,130 @@ ensure_private_directories() {
   umask 077
   mkdir -p "$HOMES_ROOT" "$home"
   chmod 700 "$HOMES_ROOT" "$home"
+}
+
+token_mode() {
+  stat -f '%Lp' "$1" 2>/dev/null || stat -c '%a' "$1"
+}
+
+validate_raw_token_file() {
+  local path="$1"
+  [ ! -L "$path" ] || die "refusing symlinked Claude token: $path"
+  [ -f "$path" ] || die "token file is not a regular file: $path"
+  [ -r "$path" ] || die "token file is not readable: $path"
+  [ -s "$path" ] || die "token file is empty: $path"
+
+  if ! LC_ALL=C awk '
+    NR > 1 { exit 1 }
+    NR == 1 && ($0 == "" || $0 ~ /[[:space:]]/) { exit 1 }
+    END { if (NR != 1) exit 1 }
+  ' "$path"; then
+    die "token file must contain exactly one non-empty line without whitespace"
+  fi
+  if LC_ALL=C grep -q '^CLAUDE_CODE_OAUTH_TOKEN=' "$path"; then
+    die "token file must contain only the raw token, not KEY=value"
+  fi
+}
+
+validate_token_permissions() {
+  local path="$1"
+  local mode
+  mode="$(token_mode "$path")"
+  if (( (8#$mode & 077) != 0 )); then
+    die "token file permissions are too broad ($mode): $path"
+  fi
+}
+
+run_setup_token() {
+  local home="$1"
+  (
+    unset ANTHROPIC_API_KEY ANTHROPIC_AUTH_TOKEN
+    unset CLAUDE_CODE_OAUTH_TOKEN CLAUDE_CODE_OAUTH_REFRESH_TOKEN CLAUDE_CODE_OAUTH_SCOPES
+    unset CLAUDE_CODE_USE_BEDROCK CLAUDE_CODE_USE_VERTEX CLAUDE_CODE_USE_FOUNDRY
+    export CLAUDE_CONFIG_DIR="$home"
+    command claude setup-token
+  )
+}
+
+install_account_token() {
+  local home="$1"
+  local destination="$home/oauth-token"
+  local source=""
+  local temporary=""
+  local prompted_token=""
+
+  if [ -L "$destination" ]; then
+    die "refusing symlinked Claude token: $destination"
+  fi
+
+  if [ -n "$TOKEN_SOURCE" ]; then
+    source="$(cd "$(dirname "$TOKEN_SOURCE")" && pwd)/$(basename "$TOKEN_SOURCE")"
+    validate_raw_token_file "$source"
+    if [ "$source" != "$destination" ]; then
+      temporary="$(mktemp "${destination}.tmp.XXXXXX")"
+      trap 'rm -f "${temporary:-}"; unset prompted_token' EXIT
+      cp "$source" "$temporary"
+      chmod 600 "$temporary"
+      mv "$temporary" "$destination"
+      temporary=""
+    fi
+  elif [ -s "$destination" ]; then
+    note "reusing installed token: $destination"
+  else
+    [ -t 0 ] || die "no token available; pass TOKEN_FILE or run interactively"
+    note "Claude will now create a one-year, inference-only token for account '$ACCOUNT'."
+    note "Copy the token it prints; it will not be saved by Claude Code."
+    run_setup_token "$home"
+    printf 'Paste setup-token for %s: ' "$ACCOUNT" >&2
+    IFS= read -r -s prompted_token
+    printf '\n' >&2
+    [ -n "$prompted_token" ] || die "token cannot be empty"
+    [[ "$prompted_token" != *[[:space:]]* ]] || die "token cannot contain whitespace"
+
+    temporary="$(mktemp "${destination}.tmp.XXXXXX")"
+    trap 'rm -f "${temporary:-}"; unset prompted_token' EXIT
+    printf '%s\n' "$prompted_token" > "$temporary"
+    unset prompted_token
+    chmod 600 "$temporary"
+    mv "$temporary" "$destination"
+    temporary=""
+  fi
+
+  chmod 600 "$destination"
+  validate_raw_token_file "$destination"
+  validate_token_permissions "$destination"
+  trap - EXIT
+  note "installed account token with mode 0600: $destination"
+}
+
+run_with_account_token() {
+  local home="$1"
+  shift
+  local token_file="$home/oauth-token"
+  local account_token=""
+  validate_raw_token_file "$token_file"
+  validate_token_permissions "$token_file"
+  IFS= read -r account_token < "$token_file"
+  (
+    unset ANTHROPIC_API_KEY ANTHROPIC_AUTH_TOKEN
+    unset CLAUDE_CODE_OAUTH_REFRESH_TOKEN CLAUDE_CODE_OAUTH_SCOPES
+    unset CLAUDE_CODE_USE_BEDROCK CLAUDE_CODE_USE_VERTEX CLAUDE_CODE_USE_FOUNDRY
+    export CLAUDE_CONFIG_DIR="$home"
+    export CLAUDE_CODE_OAUTH_TOKEN="$account_token"
+    export CLAUDE_CODE_SUBPROCESS_ENV_SCRUB="${CLAUDE_CODE_SUBPROCESS_ENV_SCRUB:-1}"
+    command claude "$@"
+  )
+  unset account_token
+}
+
+verify_account_token() {
+  local home="$1"
+  local auth_status=""
+  auth_status="$(run_with_account_token "$home" auth status --json)" ||
+    die "Claude rejected the setup-token for account '$ACCOUNT'"
+  if ! printf '%s\n' "$auth_status" | LC_ALL=C grep -Eq '"authMethod"[[:space:]]*:[[:space:]]*"oauth_token"'; then
+    die "Claude did not select the setup-token for account '$ACCOUNT'"
+  fi
 }
 
 require_existing_home() {
@@ -115,6 +243,7 @@ append_zsh_wrappers() {
   local home
   local name
   local quoted_home
+  local quoted_token
   local wrote_header=0
 
   [ -d "$HOMES_ROOT" ] || return
@@ -128,8 +257,27 @@ append_zsh_wrappers() {
       wrote_header=1
     fi
     printf -v quoted_home '%q' "$home"
+    printf -v quoted_token '%q' "$home/oauth-token"
     printf 'claude-%s() {\n' "$name" >> "$output"
-    printf '  CLAUDE_CONFIG_DIR=%s command claude "$@"\n' "$quoted_home" >> "$output"
+    printf '  local claude_bin claude_token_file=%s\n' "$quoted_token" >> "$output"
+    printf '  claude_bin="$(whence -p claude)"\n' >> "$output"
+    printf '  if [[ -z "$claude_bin" || ! -r "$claude_token_file" ]]; then\n' >> "$output"
+    printf '    echo "Claude executable or account token is unavailable for %s." >&2\n' "$name" >> "$output"
+    printf '    return 1\n' >> "$output"
+    printf '  fi\n' >> "$output"
+    printf '  (\n' >> "$output"
+    printf '    unset ANTHROPIC_API_KEY ANTHROPIC_AUTH_TOKEN\n' >> "$output"
+    printf '    unset CLAUDE_CODE_OAUTH_REFRESH_TOKEN CLAUDE_CODE_OAUTH_SCOPES\n' >> "$output"
+    printf '    unset CLAUDE_CODE_USE_BEDROCK CLAUDE_CODE_USE_VERTEX CLAUDE_CODE_USE_FOUNDRY\n' >> "$output"
+    printf '    export CLAUDE_CONFIG_DIR=%s\n' "$quoted_home" >> "$output"
+    printf '    export CLAUDE_CODE_OAUTH_TOKEN="$(<"$claude_token_file")"\n' >> "$output"
+    printf '    if [[ -z "$CLAUDE_CODE_OAUTH_TOKEN" ]]; then\n' >> "$output"
+    printf '      echo "Claude account token is empty for %s." >&2\n' "$name" >> "$output"
+    printf '      return 1\n' >> "$output"
+    printf '    fi\n' >> "$output"
+    printf '    export CLAUDE_CODE_SUBPROCESS_ENV_SCRUB="${CLAUDE_CODE_SUBPROCESS_ENV_SCRUB:-1}"\n' >> "$output"
+    printf '    command "$claude_bin" "$@"\n' >> "$output"
+    printf '  )\n' >> "$output"
     printf '}\n' >> "$output"
   done < <(find "$HOMES_ROOT" -mindepth 1 -maxdepth 1 -type d -print | LC_ALL=C sort)
   if [ "$wrote_header" -eq 1 ]; then
@@ -181,15 +329,8 @@ add_home() {
   require_claude
   home="$(account_home)"
   ensure_private_directories "$home"
-
-  if CLAUDE_CONFIG_DIR="$home" claude auth status >/dev/null 2>&1; then
-    note "preserving existing Claude login for account '$ACCOUNT'"
-  else
-    note "starting Claude login for account '$ACCOUNT'"
-    CLAUDE_CONFIG_DIR="$home" claude auth login
-    CLAUDE_CONFIG_DIR="$home" claude auth status
-  fi
-
+  install_account_token "$home"
+  verify_account_token "$home"
   sync_zsh_wrappers
   note "Claude home ready: $home"
   note "shortcut ready after opening a new shell: claude-$ACCOUNT"
@@ -201,7 +342,6 @@ remove_home() {
   local resolved_parent
   local resolved_root
   validate_account
-  require_claude
   home="$(account_home)"
   require_existing_home "$home"
   resolved_parent="$(cd -P "$(dirname "$home")" && pwd)"
@@ -210,15 +350,15 @@ remove_home() {
 
   if [ "${CONFIRM:-}" != "1" ]; then
     [ -t 0 ] || die "removal requires an interactive confirmation or CONFIRM=1"
-    printf 'Permanently log out and remove Claude home %s? [y/N] ' "$home" >&2
+    printf 'Permanently remove local Claude home %s? This does not revoke its server token. [y/N] ' "$home" >&2
     IFS= read -r answer
     [[ "$answer" =~ ^[Yy]$ ]] || die "removal cancelled"
   fi
 
-  CLAUDE_CONFIG_DIR="$home" claude auth logout
   sync_zsh_wrappers "$ACCOUNT"
   rm -rf -- "$home"
   note "removed Claude home permanently: $home"
+  note "the setup-token was removed locally but was not revoked server-side"
   note "removed shortcut: claude-$ACCOUNT"
 }
 

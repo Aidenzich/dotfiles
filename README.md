@@ -81,14 +81,15 @@ The `claude` and `codex` casks are CLI binaries (not GUI `.app`s — Homebrew's 
 | `make claude-ssh-oauth-install [TOKEN_FILE=…]` | install an SSH-only Claude OAuth token wrapper on macOS |
 | `make claude-ssh-oauth-check` | verify token permissions, managed wrapper, and zsh syntax |
 | `make claude-ssh-oauth-uninstall [DELETE_TOKEN=1]` | remove the managed wrapper; retain the token unless explicitly deleted |
-| `make claude-add-home ACCOUNT=work` | create and log in to `~/.claude-accounts/work`, then add the `claude-work` shell command |
-| `make claude-remove-home ACCOUNT=work` | log out, permanently remove that home, and remove its shell command |
+| `make claude-add-home ACCOUNT=work [TOKEN_FILE=…]` | install a private setup-token in `~/.claude-accounts/work`, then add `claude-work` |
+| `make claude-remove-home ACCOUNT=work` | permanently remove that local token/home and its shell command |
 | `make codex-add-home ACCOUNT=work` | create and log in to `~/.codex-accounts/work`, then add the `codex-work` shell command |
 | `make codex-remove-home ACCOUNT=work` | log out, permanently remove that home, and remove its shell command |
 
 ### Isolated Claude account homes
 
-Claude Code can use one isolated config directory per account:
+Claude Code's macOS Keychain login is shared by every process under the same OS
+user, so account homes use one long-lived `claude setup-token` per account:
 
 ```bash
 make claude-add-home ACCOUNT=work
@@ -100,13 +101,28 @@ claude-personal auth status
 ```
 
 Homes live under `~/.claude-accounts/<ACCOUNT>`. Each generated command sets
-`CLAUDE_CONFIG_DIR` only for that Claude process, which isolates authentication,
-user settings, sessions, plugins, and other account-level state. Repository-level
-`.claude` configuration remains available from the current project.
+`CLAUDE_CONFIG_DIR`, loads that home's mode-`0600` `oauth-token`, and injects
+`CLAUDE_CODE_OAUTH_TOKEN` only into that Claude process. The wrapper also enables
+subprocess credential scrubbing and removes higher-precedence API/provider variables
+so they cannot silently select another account. Repository-level `.claude`
+configuration remains available from the current project.
+
+When a home has no token, `claude-add-home` runs `claude setup-token`. Complete its
+authorization, copy the token it prints, then paste it into the script's hidden prompt.
+To import an existing raw-token file without a prompt:
+
+```bash
+make claude-add-home ACCOUNT=work TOKEN_FILE=/path/to/raw-token
+```
+
+Setup tokens currently last one year, are limited to inference, cannot establish
+Remote Control sessions, and may use the separate Agent SDK subscription allowance.
+See [Claude Code authentication](https://code.claude.com/docs/en/team).
 
 Remove an account interactively with `make claude-remove-home ACCOUNT=work`.
-Removal runs `claude auth logout`, permanently deletes the selected config directory,
-and removes its shell command. Use `CONFIRM=1` to bypass the prompt in automation.
+Removal permanently deletes the selected local token/config directory and removes its
+shell command, but does not revoke the token server-side. Use `CONFIRM=1` to bypass
+the prompt in automation.
 
 ### Isolated Codex account homes
 
