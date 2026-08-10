@@ -105,7 +105,10 @@ Homes live under `~/.claude-accounts/<ACCOUNT>`. Each generated command sets
 `CLAUDE_CODE_OAUTH_TOKEN` only into that Claude process. The wrapper also enables
 subprocess credential scrubbing and removes higher-precedence API/provider variables
 so they cannot silently select another account. Repository-level `.claude`
-configuration remains available from the current project.
+configuration remains available from the current project. After validating the token,
+the installer marks onboarding complete in that account's `.claude.json` so interactive
+launch does not fall through to the shared Keychain login; existing fields are preserved
+and backed up before the one-field merge.
 
 When a home has no token, `claude-add-home` runs `claude setup-token`. Complete its
 authorization, copy the token it prints, then paste it into the script's hidden prompt.

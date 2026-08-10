@@ -88,6 +88,8 @@ mode() {
   stat -f '%Lp' "$1" 2>/dev/null || stat -c '%a' "$1"
 }
 
+mkdir -p "$HOMES_ROOT/work"
+printf '{"preservedSetting":"keep-me"}\n' > "$HOMES_ROOT/work/.claude.json"
 add_output="$(run_make claude-add-home ACCOUNT=work TOKEN_FILE="$WORK_TOKEN")"
 [[ "$add_output" != *'token-work'* ]]
 [[ -d "$HOMES_ROOT/work" ]]
@@ -95,7 +97,10 @@ add_output="$(run_make claude-add-home ACCOUNT=work TOKEN_FILE="$WORK_TOKEN")"
 [[ "$(mode "$HOMES_ROOT")" == "700" ]]
 [[ "$(mode "$HOMES_ROOT/work")" == "700" ]]
 [[ "$(mode "$HOMES_ROOT/work/oauth-token")" == "600" ]]
+[[ "$(mode "$HOMES_ROOT/work/.claude.json")" == "600" ]]
 [[ "$(cksum "$HOMES_ROOT/work/oauth-token")" == "$(cksum "$WORK_TOKEN")" ]]
+jq -e '.hasCompletedOnboarding == true and .preservedSetting == "keep-me"' "$HOMES_ROOT/work/.claude.json" >/dev/null
+[[ "$(find "$HOMES_ROOT/work" -maxdepth 1 -name '.claude.json.bak.*' | wc -l | tr -d ' ')" == "1" ]]
 [[ "$(grep -c $'\tauth status --json$' "$CALLS")" == "1" ]]
 [[ "$(grep -c $'\tsetup-token$' "$CALLS" || true)" == "0" ]]
 
@@ -120,6 +125,7 @@ run_make claude-add-home ACCOUNT=work >/dev/null
 [[ "$(cksum "$HOMES_ROOT/work/oauth-token")" == "$token_before" ]]
 [[ "$(grep -c $'\tauth status --json$' "$CALLS")" == "2" ]]
 [[ "$(grep -c $'\tsetup-token$' "$CALLS" || true)" == "0" ]]
+[[ "$(find "$HOMES_ROOT/work" -maxdepth 1 -name '.claude.json.bak.*' | wc -l | tr -d ' ')" == "1" ]]
 [[ "$(grep -Fc 'claude-work() {' "$ZSHRC_TARGET")" == "1" ]]
 [[ "$(grep -Fc '# >>> dotfiles claude-homes >>>' "$ZSHRC_TARGET")" == "1" ]]
 

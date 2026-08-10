@@ -187,6 +187,46 @@ verify_account_token() {
   fi
 }
 
+complete_account_onboarding() {
+  local home="$1"
+  local state_file="$home/.claude.json"
+  local temporary=""
+  local backup=""
+  command -v jq >/dev/null 2>&1 || die "jq is required to initialize Claude account state"
+  [ ! -L "$state_file" ] || die "refusing symlinked Claude state: $state_file"
+  if [ -e "$state_file" ] && [ ! -f "$state_file" ]; then
+    die "Claude state is not a regular file: $state_file"
+  fi
+
+  temporary="$(mktemp "${state_file}.tmp.XXXXXX")"
+  trap 'rm -f "${temporary:-}"' EXIT
+  if [ -f "$state_file" ]; then
+    jq 'if type == "object" then .hasCompletedOnboarding = true else error("Claude state must be a JSON object") end' \
+      "$state_file" > "$temporary" || die "Claude state is not valid JSON: $state_file"
+  else
+    printf '{"hasCompletedOnboarding":true}\n' > "$temporary"
+  fi
+  chmod 600 "$temporary"
+
+  if [ -f "$state_file" ] && cmp -s "$state_file" "$temporary"; then
+    rm -f "$temporary"
+    temporary=""
+    chmod 600 "$state_file"
+    trap - EXIT
+    return
+  fi
+  if [ -f "$state_file" ]; then
+    backup="$(mktemp "${state_file}.bak.$(date +%Y%m%d%H%M%S).XXXXXX")"
+    cp -p "$state_file" "$backup"
+    chmod 600 "$backup"
+    note "backed up previous Claude state: $backup"
+  fi
+  mv "$temporary" "$state_file"
+  temporary=""
+  trap - EXIT
+  note "completed local onboarding state: $state_file"
+}
+
 require_existing_home() {
   local home="$1"
   [ -d "$home" ] || die "unknown Claude account '$ACCOUNT'; run: make claude-add-home ACCOUNT=$ACCOUNT"
@@ -331,6 +371,7 @@ add_home() {
   ensure_private_directories "$home"
   install_account_token "$home"
   verify_account_token "$home"
+  complete_account_onboarding "$home"
   sync_zsh_wrappers
   note "Claude home ready: $home"
   note "shortcut ready after opening a new shell: claude-$ACCOUNT"
