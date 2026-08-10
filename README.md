@@ -81,6 +81,47 @@ The `claude` and `codex` casks are CLI binaries (not GUI `.app`s — Homebrew's 
 | `make claude-ssh-oauth-install [TOKEN_FILE=…]` | install an SSH-only Claude OAuth token wrapper on macOS |
 | `make claude-ssh-oauth-check` | verify token permissions, managed wrapper, and zsh syntax |
 | `make claude-ssh-oauth-uninstall [DELETE_TOKEN=1]` | remove the managed wrapper; retain the token unless explicitly deleted |
+| `make codex-add-home ACCOUNT=work` | create and log in to `~/.codex-accounts/work`, then add the `codex-work` shell command |
+| `make codex-remove-home ACCOUNT=work` | log out, permanently remove that home, and remove its shell command |
+
+### Isolated Codex account homes
+
+Create one complete Codex home per account instead of swapping a shared
+`auth.json` in place:
+
+```bash
+make codex-add-home ACCOUNT=work
+make codex-add-home ACCOUNT=personal
+exec zsh
+
+codex-work
+codex-personal login status
+```
+
+Homes live under `~/.codex-accounts/<ACCOUNT>` with private directory permissions.
+The installer sets `cli_auth_credentials_store = "file"`, starts `codex login` for
+a new home, verifies `codex login status`, and restricts `auth.json` to mode `0600`.
+Re-running `codex-add-home` preserves an existing credential rather than silently
+replacing it. It also maintains a marked block in `~/.zshrc`, preserving a symlinked
+zsh configuration and creating one `codex-<ACCOUNT>` command per home. Open a new
+shell (or run `exec zsh`) after adding or removing an account.
+
+Remove an account interactively with:
+
+```bash
+make codex-remove-home ACCOUNT=work
+```
+
+Removal logs the account out and permanently deletes its Codex home. For automation,
+the confirmation prompt can be bypassed explicitly with `CONFIRM=1`.
+
+Shared personal skills remain in `~/.agents/skills`, while repository skills remain
+in each repo's `.agents/skills`; changing `CODEX_HOME` does not duplicate either
+canonical skill location. Account-specific Codex config and sessions remain isolated.
+
+`ACCOUNT` must start with a letter or number and may contain only letters, numbers,
+`.` `_` and `-`. The default root can be overridden with `CODEX_HOMES_ROOT`, which is
+mainly useful for isolated tests.
 
 ## Layout
 
@@ -110,6 +151,7 @@ dotfiles/
 ├── rectangle/
 │   └── config.json                # managed Rectangle preferences + shortcuts
 ├── claude/                        # auto-memory hardening — see claude/README.md
+├── codex/scripts/codex-home.sh    # isolated Codex account-home lifecycle
 ├── .tmux.conf                     # symlinked to ~/.tmux.conf
 ├── .zshrc                         # guarded cross-OS zsh setup
 ├── .p10k.zsh                      # Powerlevel10k prompt config

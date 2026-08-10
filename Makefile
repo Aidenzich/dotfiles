@@ -2,16 +2,19 @@
 
 DOTFILES_ROOT   := $(CURDIR)
 DOTFILES_CLAUDE := $(DOTFILES_ROOT)/claude
+DOTFILES_CODEX  := $(DOTFILES_ROOT)/codex
 
 # Per-project Claude targets accept TARGET=/path/to/project.
 # Default: current working directory (so cd'ing into a project and running
 # `make -f /path/to/dotfiles/Makefile claude-disable-auto-memory` works).
 TARGET ?= $(CURDIR)
 ITERM2_TMUX_MODE ?= local
+ACCOUNT ?=
 
 .PHONY: help init init-mac init-linux init-windows symlinks doctor greet ssh-check test-iterm2 test-tmux-wheel \
         iterm2 rectangle claude-disable-auto-memory claude-enable-auto-memory claude-list-memory \
-        claude-ssh-oauth-install claude-ssh-oauth-check claude-ssh-oauth-uninstall
+        claude-ssh-oauth-install claude-ssh-oauth-check claude-ssh-oauth-uninstall \
+        codex-add-home codex-remove-home
 
 help:
 	@echo "dotfiles bootstrap"
@@ -37,6 +40,9 @@ help:
 	@echo "  make claude-ssh-oauth-install   [TOKEN_FILE=/path/to/raw-token]"
 	@echo "  make claude-ssh-oauth-check"
 	@echo "  make claude-ssh-oauth-uninstall [DELETE_TOKEN=1]"
+	@echo
+	@echo "  make codex-add-home ACCOUNT=work"
+	@echo "  make codex-remove-home ACCOUNT=work"
 
 init:
 	@os=$$(bash $(DOTFILES_ROOT)/install/lib/detect-os.sh); \
@@ -119,3 +125,10 @@ claude-ssh-oauth-check:
 claude-ssh-oauth-uninstall:
 	@bash $(DOTFILES_CLAUDE)/scripts/ssh-oauth-token.sh uninstall \
 	  $(if $(filter 1,$(DELETE_TOKEN)),--delete-token)
+
+# --- Isolated Codex account homes ---
+codex-add-home:
+	@bash $(DOTFILES_CODEX)/scripts/codex-home.sh add "$(ACCOUNT)"
+
+codex-remove-home:
+	@CONFIRM="$(CONFIRM)" bash $(DOTFILES_CODEX)/scripts/codex-home.sh remove "$(ACCOUNT)"
