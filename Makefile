@@ -14,6 +14,7 @@ ACCOUNT ?=
 .PHONY: help init init-mac init-linux init-windows symlinks doctor greet ssh-check test-iterm2 test-tmux-wheel \
         iterm2 rectangle claude-disable-auto-memory claude-enable-auto-memory claude-list-memory \
         claude-ssh-oauth-install claude-ssh-oauth-check claude-ssh-oauth-uninstall \
+        claude-add-home claude-remove-home \
         codex-add-home codex-remove-home
 
 help:
@@ -40,6 +41,8 @@ help:
 	@echo "  make claude-ssh-oauth-install   [TOKEN_FILE=/path/to/raw-token]"
 	@echo "  make claude-ssh-oauth-check"
 	@echo "  make claude-ssh-oauth-uninstall [DELETE_TOKEN=1]"
+	@echo "  make claude-add-home ACCOUNT=work"
+	@echo "  make claude-remove-home ACCOUNT=work"
 	@echo
 	@echo "  make codex-add-home ACCOUNT=work"
 	@echo "  make codex-remove-home ACCOUNT=work"
@@ -125,6 +128,13 @@ claude-ssh-oauth-check:
 claude-ssh-oauth-uninstall:
 	@bash $(DOTFILES_CLAUDE)/scripts/ssh-oauth-token.sh uninstall \
 	  $(if $(filter 1,$(DELETE_TOKEN)),--delete-token)
+
+# --- Isolated Claude account homes ---
+claude-add-home:
+	@bash $(DOTFILES_CLAUDE)/scripts/claude-home.sh add "$(ACCOUNT)"
+
+claude-remove-home:
+	@CONFIRM="$(CONFIRM)" bash $(DOTFILES_CLAUDE)/scripts/claude-home.sh remove "$(ACCOUNT)"
 
 # --- Isolated Codex account homes ---
 codex-add-home:

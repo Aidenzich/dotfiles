@@ -81,8 +81,32 @@ The `claude` and `codex` casks are CLI binaries (not GUI `.app`s — Homebrew's 
 | `make claude-ssh-oauth-install [TOKEN_FILE=…]` | install an SSH-only Claude OAuth token wrapper on macOS |
 | `make claude-ssh-oauth-check` | verify token permissions, managed wrapper, and zsh syntax |
 | `make claude-ssh-oauth-uninstall [DELETE_TOKEN=1]` | remove the managed wrapper; retain the token unless explicitly deleted |
+| `make claude-add-home ACCOUNT=work` | create and log in to `~/.claude-accounts/work`, then add the `claude-work` shell command |
+| `make claude-remove-home ACCOUNT=work` | log out, permanently remove that home, and remove its shell command |
 | `make codex-add-home ACCOUNT=work` | create and log in to `~/.codex-accounts/work`, then add the `codex-work` shell command |
 | `make codex-remove-home ACCOUNT=work` | log out, permanently remove that home, and remove its shell command |
+
+### Isolated Claude account homes
+
+Claude Code can use one isolated config directory per account:
+
+```bash
+make claude-add-home ACCOUNT=work
+make claude-add-home ACCOUNT=personal
+exec zsh
+
+claude-work
+claude-personal auth status
+```
+
+Homes live under `~/.claude-accounts/<ACCOUNT>`. Each generated command sets
+`CLAUDE_CONFIG_DIR` only for that Claude process, which isolates authentication,
+user settings, sessions, plugins, and other account-level state. Repository-level
+`.claude` configuration remains available from the current project.
+
+Remove an account interactively with `make claude-remove-home ACCOUNT=work`.
+Removal runs `claude auth logout`, permanently deletes the selected config directory,
+and removes its shell command. Use `CONFIRM=1` to bypass the prompt in automation.
 
 ### Isolated Codex account homes
 
@@ -151,6 +175,7 @@ dotfiles/
 ├── rectangle/
 │   └── config.json                # managed Rectangle preferences + shortcuts
 ├── claude/                        # auto-memory hardening — see claude/README.md
+│   └── scripts/claude-home.sh     # isolated Claude account-home lifecycle
 ├── codex/scripts/codex-home.sh    # isolated Codex account-home lifecycle
 ├── .tmux.conf                     # symlinked to ~/.tmux.conf
 ├── .zshrc                         # guarded cross-OS zsh setup
