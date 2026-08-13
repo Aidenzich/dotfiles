@@ -82,8 +82,8 @@ if [[ -r "$ZSH/oh-my-zsh.sh" ]]; then
   source "$ZSH/oh-my-zsh.sh"
 fi
 
-# VSCode shell integration.
-if [[ "$TERM_PROGRAM" == "vscode" ]] && command -v code >/dev/null 2>&1; then
+# VSCode shell integration. Avoid re-sourcing .zshrc when VS Code already injected it.
+if [[ "$TERM_PROGRAM" == "vscode" && "$VSCODE_INJECTION" != "1" ]] && command -v code >/dev/null 2>&1; then
   _vscode_shell_integration="$(code --locate-shell-integration-path zsh 2>/dev/null)"
   [[ -r "$_vscode_shell_integration" ]] && source "$_vscode_shell_integration"
   unset _vscode_shell_integration
