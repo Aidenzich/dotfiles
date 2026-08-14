@@ -2,6 +2,8 @@ name: CI
 
 on:
   push:
+    branches:
+      - main
   pull_request:
 
 permissions:
@@ -40,6 +42,9 @@ jobs:
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
+
+      - name: Install test dependencies
+        run: brew install tmux
 
       - name: Run iTerm2 settings test
         run: bash tests/iterm2-mode.sh
