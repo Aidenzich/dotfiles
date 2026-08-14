@@ -1,0 +1,45 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: Shell tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Install test dependencies
+        run: sudo apt-get update && sudo apt-get install --yes tmux
+
+      - name: Check Bash syntax
+        shell: bash
+        run: |
+          while IFS= read -r script; do
+            bash -n "$script"
+          done < <(find . -type f -name '*.sh' -not -path './.git/*' -print)
+
+      - name: Run tests
+        shell: bash
+        run: |
+          for test_script in tests/*.sh; do
+            bash "$test_script"
+          done
+
+  test-macos:
+    name: macOS iTerm2 settings test
+    runs-on: macos-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Run iTerm2 settings test
+        run: bash tests/iterm2-mode.sh
