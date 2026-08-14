@@ -85,7 +85,11 @@ run_make() {
 }
 
 mode() {
-  stat -f '%Lp' "$1" 2>/dev/null || stat -c '%a' "$1"
+  if [[ "$(uname -s)" == "Darwin" ]]; then
+    stat -f '%Lp' "$1"
+  else
+    stat -c '%a' "$1"
+  fi
 }
 
 mkdir -p "$HOMES_ROOT/work"
@@ -98,7 +102,7 @@ add_output="$(run_make claude-add-home ACCOUNT=work TOKEN_FILE="$WORK_TOKEN")"
 [[ "$(mode "$HOMES_ROOT/work")" == "700" ]]
 [[ "$(mode "$HOMES_ROOT/work/oauth-token")" == "600" ]]
 [[ "$(mode "$HOMES_ROOT/work/.claude.json")" == "600" ]]
-[[ "$(cksum "$HOMES_ROOT/work/oauth-token")" == "$(cksum "$WORK_TOKEN")" ]]
+cmp -s "$HOMES_ROOT/work/oauth-token" "$WORK_TOKEN"
 jq -e '.hasCompletedOnboarding == true and .preservedSetting == "keep-me"' "$HOMES_ROOT/work/.claude.json" >/dev/null
 [[ "$(find "$HOMES_ROOT/work" -maxdepth 1 -name '.claude.json.bak.*' | wc -l | tr -d ' ')" == "1" ]]
 [[ "$(grep -c $'\tauth status --json$' "$CALLS")" == "1" ]]

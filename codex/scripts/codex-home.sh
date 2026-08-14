@@ -223,7 +223,11 @@ sync_zsh_wrappers() {
   trap 'rm -f "${temporary:-}"' EXIT
   render_zsh_without_managed_block "$zshrc" "$temporary"
   append_zsh_wrappers "$temporary" "$excluded_account"
-  mode="$(stat -f '%Lp' "$zshrc" 2>/dev/null || stat -c '%a' "$zshrc")"
+  if [[ "$(uname -s)" == "Darwin" ]]; then
+    mode="$(stat -f '%Lp' "$zshrc")"
+  else
+    mode="$(stat -c '%a' "$zshrc")"
+  fi
   chmod "$mode" "$temporary"
   command -v zsh >/dev/null 2>&1 || die "zsh is required to validate generated wrappers"
   zsh -n "$temporary" || die "generated zsh configuration failed syntax validation"
