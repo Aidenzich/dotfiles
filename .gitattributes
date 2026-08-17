@@ -1,0 +1,25 @@
+# Keep text files deterministic across macOS, Linux, and Windows checkouts.
+* text=auto eol=lf
+
+# Explicitly classify the executable/configuration formats used by this repo.
+*.sh text eol=lf
+*.zsh text eol=lf
+.zshrc text eol=lf
+.p10k.zsh text eol=lf
+Makefile text eol=lf
+*.ps1 text eol=lf
+*.py text eol=lf
+*.json text eol=lf
+*.md text eol=lf
+*.txt text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf
+
+# Do not apply text normalization to binary assets added later.
+*.gif binary
+*.ico binary
+*.jpg binary
+*.jpeg binary
+*.pdf binary
+*.png binary
+*.zip binary

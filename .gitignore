@@ -1,0 +1,32 @@
+# Operating-system metadata
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# Editors and local workspaces
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Local agent state
+.agent-lessons/
+
+# Runtime, test, and backup artifacts
+*.log
+*.tmp
+*.bak
+*.bak.*
+*.orig
+*.rej
+coverage/
+
+# Credentials and local environment overrides
+.env
+.env.*
+!.env.example
+auth.json
+oauth-token
+*.pem
+*.key
