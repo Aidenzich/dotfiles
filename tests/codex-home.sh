@@ -5,8 +5,8 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 TEST_ROOT="$(mktemp -d -t dotfiles-codex-home.XXXXXX)"
 FAKE_BIN="$TEST_ROOT/bin"
-HOMES_ROOT="$TEST_ROOT/homes"
 TEST_HOME="$TEST_ROOT/home"
+HOMES_ROOT="$TEST_HOME/.codex-accounts"
 ZSHRC_TARGET="$TEST_ROOT/zshrc-target"
 ZSHRC_LINK="$TEST_HOME/.zshrc"
 CALLS="$TEST_ROOT/calls.log"
@@ -46,6 +46,7 @@ EOF
 chmod 755 "$FAKE_BIN/codex"
 
 run_script() {
+  HOME="$TEST_HOME" \
   CODEX_HOMES_ROOT="$HOMES_ROOT" \
   CODEX_ZSHRC="$ZSHRC_LINK" \
   FAKE_CODEX_CALLS="$CALLS" \
@@ -54,6 +55,7 @@ run_script() {
 }
 
 run_make() {
+  HOME="$TEST_HOME" \
   CODEX_HOMES_ROOT="$HOMES_ROOT" \
   CODEX_ZSHRC="$ZSHRC_LINK" \
   FAKE_CODEX_CALLS="$CALLS" \
@@ -83,7 +85,7 @@ run_make codex-add-home ACCOUNT=work >/dev/null
 # The managed shortcut is written through the symlink without replacing it.
 [[ -L "$ZSHRC_LINK" ]]
 grep -Fq 'codex-work() {' "$ZSHRC_TARGET"
-grep -Fq "CODEX_HOME=$HOMES_ROOT/work command codex \"\$@\"" "$ZSHRC_TARGET"
+grep -Fq 'CODEX_HOME=~/.codex-accounts/work command codex "$@"' "$ZSHRC_TARGET"
 [[ "$(find "$TEST_HOME" -maxdepth 1 -name '.zshrc.bak.*' | wc -l | tr -d ' ')" == "1" ]]
 [[ "$(find "$TEST_ROOT" -maxdepth 1 -name 'zshrc-target.bak.*' | wc -l | tr -d ' ')" == "0" ]]
 [[ "$(grep -Fc '# >>> dotfiles codex-homes >>>' "$ZSHRC_TARGET")" == "1" ]]
@@ -109,7 +111,7 @@ grep -q '^cli_auth_credentials_store = "file"$' "$HOMES_ROOT/personal/config.tom
 grep -Fq 'codex-work() {' "$ZSHRC_TARGET"
 grep -Fq 'codex-personal() {' "$ZSHRC_TARGET"
 wrapper_output="$(
-  FAKE_CODEX_CALLS="$CALLS" PATH="$FAKE_BIN:$PATH" \
+  HOME="$TEST_HOME" FAKE_CODEX_CALLS="$CALLS" PATH="$FAKE_BIN:$PATH" \
     zsh -c 'source "$1"; codex-personal --version' _ "$ZSHRC_TARGET"
 )"
 [[ "$wrapper_output" == 'run:--version' ]]

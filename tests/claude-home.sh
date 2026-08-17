@@ -5,8 +5,8 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 TEST_ROOT="$(mktemp -d -t dotfiles-claude-home.XXXXXX)"
 FAKE_BIN="$TEST_ROOT/bin"
-HOMES_ROOT="$TEST_ROOT/homes"
 TEST_HOME="$TEST_ROOT/home"
+HOMES_ROOT="$TEST_HOME/.claude-accounts"
 SHARED_SKILLS="$TEST_HOME/.claude/skills"
 ZSHRC_TARGET="$TEST_ROOT/zshrc-target"
 ZSHRC_LINK="$TEST_HOME/.zshrc"
@@ -72,6 +72,7 @@ EOF
 chmod 755 "$FAKE_BIN/claude"
 
 run_script() {
+  HOME="$TEST_HOME" \
   CLAUDE_HOMES_ROOT="$HOMES_ROOT" \
   CLAUDE_SKILLS_DIR="$SHARED_SKILLS" \
   CLAUDE_ZSHRC="$ZSHRC_LINK" \
@@ -81,6 +82,7 @@ run_script() {
 }
 
 run_make() {
+  HOME="$TEST_HOME" \
   CLAUDE_HOMES_ROOT="$HOMES_ROOT" \
   CLAUDE_SKILLS_DIR="$SHARED_SKILLS" \
   CLAUDE_ZSHRC="$ZSHRC_LINK" \
@@ -119,8 +121,8 @@ jq -e '.hasCompletedOnboarding == true and .preservedSetting == "keep-me"' "$HOM
 # The managed shortcut is written through the symlink and preserves other blocks.
 [[ -L "$ZSHRC_LINK" ]]
 grep -Fq 'claude-work() {' "$ZSHRC_TARGET"
-grep -Fq "export CLAUDE_CONFIG_DIR=$HOMES_ROOT/work" "$ZSHRC_TARGET"
-grep -Fq "claude_token_file=$HOMES_ROOT/work/oauth-token" "$ZSHRC_TARGET"
+grep -Fq 'export CLAUDE_CONFIG_DIR=~/.claude-accounts/work' "$ZSHRC_TARGET"
+grep -Fq 'claude_token_file=~/.claude-accounts/work/oauth-token' "$ZSHRC_TARGET"
 grep -Fq 'export CLAUDE_CODE_OAUTH_TOKEN="$(<"$claude_token_file")"' "$ZSHRC_TARGET"
 grep -Fq 'export CLAUDE_CODE_SUBPROCESS_ENV_SCRUB="${CLAUDE_CODE_SUBPROCESS_ENV_SCRUB:-1}"' "$ZSHRC_TARGET"
 grep -Fq '# >>> dotfiles codex-homes >>>' "$ZSHRC_TARGET"
@@ -147,6 +149,7 @@ grep -Fq 'claude-personal() {' "$ZSHRC_TARGET"
 wrapper_output="$(
   ANTHROPIC_API_KEY=wrong-provider \
   CLAUDE_CODE_USE_BEDROCK=1 \
+  HOME="$TEST_HOME" \
   FAKE_CLAUDE_CALLS="$CALLS" \
   PATH="$FAKE_BIN:$PATH" \
     zsh -c 'source "$1"; claude-personal --version' _ "$ZSHRC_TARGET"
@@ -158,7 +161,7 @@ personal_token_backup="$(mktemp "$HOMES_ROOT/personal/oauth-token.test.XXXXXX")"
 cp "$HOMES_ROOT/personal/oauth-token" "$personal_token_backup"
 : > "$HOMES_ROOT/personal/oauth-token"
 calls_before="$(wc -l < "$CALLS" | tr -d ' ')"
-if FAKE_CLAUDE_CALLS="$CALLS" PATH="$FAKE_BIN:$PATH" \
+if HOME="$TEST_HOME" FAKE_CLAUDE_CALLS="$CALLS" PATH="$FAKE_BIN:$PATH" \
   zsh -c 'source "$1"; claude-personal --version' _ "$ZSHRC_TARGET" >/dev/null 2>&1; then
   echo '[test-claude-home] empty installed token unexpectedly reached Claude' >&2
   exit 1
