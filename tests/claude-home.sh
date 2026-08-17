@@ -7,6 +7,7 @@ TEST_ROOT="$(mktemp -d -t dotfiles-claude-home.XXXXXX)"
 FAKE_BIN="$TEST_ROOT/bin"
 HOMES_ROOT="$TEST_ROOT/homes"
 TEST_HOME="$TEST_ROOT/home"
+SHARED_SKILLS="$TEST_HOME/.claude/skills"
 ZSHRC_TARGET="$TEST_ROOT/zshrc-target"
 ZSHRC_LINK="$TEST_HOME/.zshrc"
 CALLS="$TEST_ROOT/calls.log"
@@ -19,6 +20,8 @@ cleanup() {
 trap cleanup EXIT
 
 mkdir -p "$FAKE_BIN" "$TEST_HOME"
+mkdir -p "$SHARED_SKILLS/example-skill"
+printf '%s\n' '# Example skill' > "$SHARED_SKILLS/example-skill/SKILL.md"
 printf 'token-work\n' > "$WORK_TOKEN"
 printf 'token-personal\n' > "$PERSONAL_TOKEN"
 cat > "$ZSHRC_TARGET" <<'EOF'
@@ -70,6 +73,7 @@ chmod 755 "$FAKE_BIN/claude"
 
 run_script() {
   CLAUDE_HOMES_ROOT="$HOMES_ROOT" \
+  CLAUDE_SKILLS_DIR="$SHARED_SKILLS" \
   CLAUDE_ZSHRC="$ZSHRC_LINK" \
   FAKE_CLAUDE_CALLS="$CALLS" \
   PATH="$FAKE_BIN:$PATH" \
@@ -78,6 +82,7 @@ run_script() {
 
 run_make() {
   CLAUDE_HOMES_ROOT="$HOMES_ROOT" \
+  CLAUDE_SKILLS_DIR="$SHARED_SKILLS" \
   CLAUDE_ZSHRC="$ZSHRC_LINK" \
   FAKE_CLAUDE_CALLS="$CALLS" \
   PATH="$FAKE_BIN:$PATH" \
@@ -98,6 +103,9 @@ add_output="$(run_make claude-add-home ACCOUNT=work TOKEN_FILE="$WORK_TOKEN")"
 [[ "$add_output" != *'token-work'* ]]
 [[ -d "$HOMES_ROOT/work" ]]
 [[ -f "$HOMES_ROOT/work/oauth-token" ]]
+[[ -L "$HOMES_ROOT/work/skills" ]]
+[[ "$(cd -P "$HOMES_ROOT/work/skills" && pwd)" == "$(cd -P "$SHARED_SKILLS" && pwd)" ]]
+[[ -f "$HOMES_ROOT/work/skills/example-skill/SKILL.md" ]]
 [[ "$(mode "$HOMES_ROOT")" == "700" ]]
 [[ "$(mode "$HOMES_ROOT/work")" == "700" ]]
 [[ "$(mode "$HOMES_ROOT/work/oauth-token")" == "600" ]]

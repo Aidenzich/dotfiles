@@ -48,6 +48,7 @@ require_claude() {
 
 readonly HOMES_ROOT="${CLAUDE_HOMES_ROOT:-$HOME/.claude-accounts}"
 readonly ZSHRC_LINK="${CLAUDE_ZSHRC:-$HOME/.zshrc}"
+readonly SHARED_SKILLS_DIR="${CLAUDE_SKILLS_DIR:-$HOME/.claude/skills}"
 readonly MANAGED_BEGIN="# >>> dotfiles claude-homes >>>"
 readonly MANAGED_END="# <<< dotfiles claude-homes <<<"
 readonly TOKEN_SOURCE="${TOKEN_FILE:-}"
@@ -61,6 +62,18 @@ ensure_private_directories() {
   umask 077
   mkdir -p "$HOMES_ROOT" "$home"
   chmod 700 "$HOMES_ROOT" "$home"
+}
+
+link_shared_skills() {
+  local home="$1"
+  local account_skills="$home/skills"
+  mkdir -p "$SHARED_SKILLS_DIR"
+  if [ ! -e "$account_skills" ] && [ ! -L "$account_skills" ]; then
+    ln -s "$SHARED_SKILLS_DIR" "$account_skills"
+  fi
+  [ -L "$account_skills" ] || die "Claude account skills path is not a symlink: $account_skills"
+  [ "$(resolve_symlink_target "$account_skills")" = "$(resolve_symlink_target "$SHARED_SKILLS_DIR")" ] ||
+    die "Claude account skills link does not target $SHARED_SKILLS_DIR: $account_skills"
 }
 
 token_mode() {
@@ -373,6 +386,7 @@ add_home() {
   require_claude
   home="$(account_home)"
   ensure_private_directories "$home"
+  link_shared_skills "$home"
   install_account_token "$home"
   verify_account_token "$home"
   complete_account_onboarding "$home"
