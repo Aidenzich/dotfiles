@@ -166,6 +166,24 @@ canonical skill location. Account-specific Codex config and sessions remain isol
 `.` `_` and `-`. The default root can be overridden with `CODEX_HOMES_ROOT`, which is
 mainly useful for isolated tests.
 
+### Shared agent skills (`sync-skills`)
+
+`~/.agents/skills` is the single source of shared personal skills. Install a
+skill by placing (or cloning) one directory with a `SKILL.md` at its root there,
+for example:
+
+```bash
+git clone <skill-repo-url> ~/.agents/skills/<skill-name>
+sync-skills
+```
+
+`sync-skills` (defined in `.zshrc`) deletes every symlink in the agent skill
+directories (`~/.claude/skills`, `~/.gemini/antigravity/skills`), then links
+each `~/.agents/skills/<name>` that has a `SKILL.md` as `<name>`, plus every
+directory under a skill's nested `.claude/skills/`. Real directories in the
+targets are never touched, and isolated Claude homes get a `skills` symlink to
+`~/.claude/skills`. Re-run it after adding, removing or renaming a skill.
+
 ## Layout
 
 ```
