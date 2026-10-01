@@ -107,8 +107,9 @@ managed_profile_rows="$(
 )"
 
 # Report the wheel as a real mouse event whenever the foreground terminal layer
-# requests mouse input. Ordinary tmux then applies our WheelUpPane copy-mode
-# binding instead of letting iTerm2 translate the wheel into Up/Down keys.
+# requests mouse input. Ordinary tmux then applies our WheelUpPane policy
+# (copy mode, or forward to alternate-screen mouse TUIs) instead of letting
+# iTerm2 translate the wheel into Up/Down keys.
 # Control-mode integration sessions explicitly use `mouse off`, so they retain
 # native iTerm2 scrollback. Apply the same values to all managed profiles.
 while IFS=$'\t' read -r managed_index managed_name; do
